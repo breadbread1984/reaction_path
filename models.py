@@ -28,17 +28,20 @@ class MaterialEncoder(nn.Module):
         x = F.gelu(x)
       else:
         raise Exception('unknown activation!')
-    # map back samples to its position in the original batch
+    # simplified RMS Normalization
     x = x * torch.rsqrt(torch.sum(x ** 2, dim = -1, keepdim = True)) # x.shape = (reduced batch, ele_dim_features)
+    # map back samples to its position in the original batch
     index = torch.unsqueeze(torch.arange(start = 0, end = inputs.shape[0])[mask], dim = -1) # index.shape = (reduced batch, 1)
     index = torch.tile(index, (1, self.ele_dim_features)) # index.shape = (reduced batch, ele_dim_features)
     x = torch.zeros((inputs.shape[0], self.ele_dim_features)).scatter_(dim = 0, index = index, src = x) # x.shape = (batch, ele_dim_features)
     return x
 
 class MaterialDecoder(nn.Module):
-  def __init__(self, mat_feature_len = 83, ele_dim_features = 32, final_activation = None):
+  def __init__(self, mat_feature_len = 83, ele_dim_features = 32, final_activation = None, norm_in_element_projection = False):
     super(MaterialDecoder, self).__init__()
+    self.mat_feature_len = mat_feature_len
     self.final_activation = final_activation
+    self.norm_in_element_projection = norm_in_element_projection
     self.element_layer = nn.Linear(ele_dim_features, mat_feature_len)
   def forward(self, inputs):
     # inputs.shape = (batch, ele_dim_features)
@@ -52,7 +55,12 @@ class MaterialDecoder(nn.Module):
     else:
       raise Exception('unknown activation!')
     # map back samples to is position in the original batch
-    
+    index = torch.unsqueeze(torch.arange(start = 0, end = inputs.shape[0])[mask], dim = -1) # index.shape = (reduced batch, 1)
+    index = torch.tile(index, (1, self.mat_feature_len)) # index.shape = (reduced batch, mat_feature_len)
+    x = torch.zeros((inputs.shape[0], self.mat_feature_len)).scatter_(dim = 0, index = index, src = x) # x.shape = (batch, mat_feature_len)
+    # simplified RMS normalization
+    if self.norm_in_element_projection:
+      x = x * torch.rsqrt(torch.sum(self.element_layer.weight ** 2, dim = -1)) # x.shape = 
 
 def TransformerLayer(max_mats_num,
                      hidden_size = 768,
