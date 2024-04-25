@@ -9,23 +9,26 @@ import torch.nn.functional as F
 class MaterialEncoder(nn.Module):
   def __init__(self, mat_feature_len = 83, ele_dim_features = 32, num_attention_layers = 3, hidden_activation = 'gelu'):
     super(MaterialEncoder, self).__init__()
-    self.shift = nn.parameter.Parameter(-0.5, requires_grad = True)
+    self.ele_dim_features = ele_dim_features
+    self.hidden_activation = hidden_activation
+    self.shift = nn.Parameter(torch.tensor(-0.5), requires_grad = True)
     self.layers = nn.ModuleList([nn.Linear(mat_feature_len if i == 0 else ele_dim_features, ele_dim_features) for i in range(num_attention_layers)])
   def forward(self, inputs):
     # inputs.shape = (batch, hidden_size)
     mask = torch.any(torch.not_equal(inputs, 0), dim = -1)
     processed_inputs = inputs[mask] # processed_inputs.shape = (reduced batch, hidden size)
-    x = torch.where(torch.equal(processed_inputs, 0), self.shift, processed_inputs) # x.shape = (reduced batch, hidden size)
+    x = torch.where(processed_inputs == 0, self.shift, processed_inputs) # x.shape = (reduced batch, hidden size)
     for layer in self.layers:
       x = layer(x) # x.shape = (reduced batch, ele_dim_features)
-      if hidden_activation == 'gelu':
+      if self.hidden_activation == 'gelu':
         x = F.gelu(x)
       else:
         raise Exception('unknown activation!')
+    # map back samples to its position in the original batch
     x = x * torch.rsqrt(torch.sum(x ** 2, dim = -1, keepdim = True)) # x.shape = (reduced batch, ele_dim_features)
     index = torch.unsqueeze(torch.range(inputs.shape[0])[mask], dim = -1) # index.shape = (reduced batch, 1)
-    index = torch.tile(index, (1, x.shape[-1])) # index.shape = (reduced batch, ele_dim_features)
-    x = torch.zeros((inputs.shape[0], x.shape[-1])).scatter_(dim = 0, index, x) # x.shape = (batch, ele_dim_features)
+    index = torch.tile(index, (1, self.ele_dim_features)) # index.shape = (reduced batch, ele_dim_features)
+    x = torch.zeros((inputs.shape[0], self.ele_dim_features)).scatter_(dim = 0, indices = index, src = x) # x.shape = (batch, ele_dim_features)
     return x
 
 def TransformerLayer(max_mats_num,
@@ -52,5 +55,9 @@ def TransformerLayer(max_mats_num,
   return BertLayer(config)
 
 if __name__ == "__main__":
-  layer = TransformerLayer(1024)
+  me = MaterialEncoder()
+  inputs = torch.Tensor([[0 for i in range(83)],[1,] + [0 for i in range(82)]]).to(torch.float32)
+  outputs = me(inputs)
+  print(outputs)
+  #layer = TransformerLayer(1024)
 
