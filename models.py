@@ -20,7 +20,9 @@ class MaterialEncoder(nn.Module):
     x = torch.where(processed_inputs == 0, self.shift, processed_inputs) # x.shape = (reduced batch, mat_feature_len)
     for layer in self.layers:
       x = layer(x) # x.shape = (reduced batch, ele_dim_features)
-      if self.hidden_activation == 'gelu':
+      if self.hidden_activation is None:
+        pass
+      elif self.hidden_activation == 'gelu':
         x = F.gelu(x)
       else:
         raise Exception('unknown activation!')
@@ -32,12 +34,22 @@ class MaterialEncoder(nn.Module):
     return x
 
 class MaterialDecoder(nn.Module):
-  def __init__(self, mat_feature_len = 83, ele_dim_features = 32):
+  def __init__(self, all_eles = ["Cs","K","Rb","Ba","Na","Sr","Li","Ca","La","Tb","Yb","Ce","Pr","Nd","Sm","Eu","Gd","Dy","Y","Ho","Er","Tm","Lu","Pu","Am","Cm","Hf","Th","Mg","Zr","Np","Sc","U","Ta","Ti","Mn","Be","Nb","Al","Tl","V","Zn","Cr","Cd","In","Ga","Fe","Co","Cu","Re","Si","Tc","Ni","Ag","Sn","Hg","Ge","Bi","B","Sb","Te","Mo","As","P","H","Ir","Os","Pd","Ru","Pt","Rh","Pb","W","Au","C","Se","S","I","Br","N","Cl","O","F",], mat_feature_len = 83, ele_dim_features = 32, final_activation = None):
     super(MaterialDecoder, self).__init__()
+    self.final_activation = final_activation
+    self.element_layer = nn.Linear(ele_dim_features, len(all_eles))
   def forward(self, inputs):
     # inputs.shape = (batch, ele_dim_features)
     mask = torch.any(torch.not_equal(inputs, 0), dim = -1)
     processed_inputs = inputs[mask] # processed_inputs.shape = (reduced batch, ele_dim_features)
+    x = self.element_layer(processed_inputs) # x.shape = (reduced batch, num_eles)
+    if self.final_activation is None:
+      pass
+    elif self.final_activation == 'gelu':
+      x = F.gelu(x)
+    else:
+      raise Exception('unknown activation!')
+    # map back samples to is position in the original batch
 
 
 def TransformerLayer(max_mats_num,
@@ -63,7 +75,7 @@ def TransformerLayer(max_mats_num,
   config = Config(**config)
   return BertLayer(config)
 
-if __name__ == "__main__":
+if __name__ =="__main__":
   me = MaterialEncoder()
   inputs = torch.Tensor([[0 for i in range(83)],[1,] + [0 for i in range(82)]]).to(torch.float32)
   outputs = me(inputs)
