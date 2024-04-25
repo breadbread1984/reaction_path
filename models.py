@@ -32,9 +32,12 @@ class MaterialEncoder(nn.Module):
     return x
 
 class MaterialDecoder(nn.Module):
-  def __init__(self, ):
+  def __init__(self, mat_feature_len = 83, ele_dim_features = 32):
     super(MaterialDecoder, self).__init__()
   def forward(self, inputs):
+    # inputs.shape = (batch, ele_dim_features)
+    mask = torch.any(torch.not_equal(inputs, 0), dim = -1)
+    processed_inputs = inputs[mask] # processed_inputs.shape = (reduced batch, ele_dim_features)
 
 
 def TransformerLayer(max_mats_num,
