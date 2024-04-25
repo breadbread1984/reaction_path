@@ -26,9 +26,9 @@ class MaterialEncoder(nn.Module):
         raise Exception('unknown activation!')
     # map back samples to its position in the original batch
     x = x * torch.rsqrt(torch.sum(x ** 2, dim = -1, keepdim = True)) # x.shape = (reduced batch, ele_dim_features)
-    index = torch.unsqueeze(torch.range(inputs.shape[0])[mask], dim = -1) # index.shape = (reduced batch, 1)
+    index = torch.unsqueeze(torch.arange(start = 0, end = inputs.shape[0])[mask], dim = -1) # index.shape = (reduced batch, 1)
     index = torch.tile(index, (1, self.ele_dim_features)) # index.shape = (reduced batch, ele_dim_features)
-    x = torch.zeros((inputs.shape[0], self.ele_dim_features)).scatter_(dim = 0, indices = index, src = x) # x.shape = (batch, ele_dim_features)
+    x = torch.zeros((inputs.shape[0], self.ele_dim_features)).scatter_(dim = 0, index = index, src = x) # x.shape = (batch, ele_dim_features)
     return x
 
 def TransformerLayer(max_mats_num,
