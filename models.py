@@ -14,10 +14,10 @@ class MaterialEncoder(nn.Module):
     self.shift = nn.Parameter(torch.tensor(-0.5), requires_grad = True)
     self.layers = nn.ModuleList([nn.Linear(mat_feature_len if i == 0 else ele_dim_features, ele_dim_features) for i in range(num_attention_layers)])
   def forward(self, inputs):
-    # inputs.shape = (batch, hidden_size)
+    # inputs.shape = (batch, mat_feature_len)
     mask = torch.any(torch.not_equal(inputs, 0), dim = -1)
-    processed_inputs = inputs[mask] # processed_inputs.shape = (reduced batch, hidden size)
-    x = torch.where(processed_inputs == 0, self.shift, processed_inputs) # x.shape = (reduced batch, hidden size)
+    processed_inputs = inputs[mask] # processed_inputs.shape = (reduced batch, mat_feature_len)
+    x = torch.where(processed_inputs == 0, self.shift, processed_inputs) # x.shape = (reduced batch, mat_feature_len)
     for layer in self.layers:
       x = layer(x) # x.shape = (reduced batch, ele_dim_features)
       if self.hidden_activation == 'gelu':
@@ -30,6 +30,12 @@ class MaterialEncoder(nn.Module):
     index = torch.tile(index, (1, self.ele_dim_features)) # index.shape = (reduced batch, ele_dim_features)
     x = torch.zeros((inputs.shape[0], self.ele_dim_features)).scatter_(dim = 0, index = index, src = x) # x.shape = (batch, ele_dim_features)
     return x
+
+class MaterialDecoder(nn.Module):
+  def __init__(self, ):
+    super(MaterialDecoder, self).__init__()
+  def forward(self, inputs):
+
 
 def TransformerLayer(max_mats_num,
                      hidden_size = 768,
