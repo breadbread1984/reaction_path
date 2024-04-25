@@ -6,6 +6,8 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
+all_elements = ["Cs","K","Rb","Ba","Na","Sr","Li","Ca","La","Tb","Yb","Ce","Pr","Nd","Sm","Eu","Gd","Dy","Y","Ho","Er","Tm","Lu","Pu","Am","Cm","Hf","Th","Mg","Zr","Np","Sc","U","Ta","Ti","Mn","Be","Nb","Al","Tl","V","Zn","Cr","Cd","In","Ga","Fe","Co","Cu","Re","Si","Tc","Ni","Ag","Sn","Hg","Ge","Bi","B","Sb","Te","Mo","As","P","H","Ir","Os","Pd","Ru","Pt","Rh","Pb","W","Au","C","Se","S","I","Br","N","Cl","O","F",]
+
 class MaterialEncoder(nn.Module):
   def __init__(self, mat_feature_len = 83, ele_dim_features = 32, num_attention_layers = 3, hidden_activation = 'gelu'):
     super(MaterialEncoder, self).__init__()
@@ -34,10 +36,10 @@ class MaterialEncoder(nn.Module):
     return x
 
 class MaterialDecoder(nn.Module):
-  def __init__(self, all_eles = ["Cs","K","Rb","Ba","Na","Sr","Li","Ca","La","Tb","Yb","Ce","Pr","Nd","Sm","Eu","Gd","Dy","Y","Ho","Er","Tm","Lu","Pu","Am","Cm","Hf","Th","Mg","Zr","Np","Sc","U","Ta","Ti","Mn","Be","Nb","Al","Tl","V","Zn","Cr","Cd","In","Ga","Fe","Co","Cu","Re","Si","Tc","Ni","Ag","Sn","Hg","Ge","Bi","B","Sb","Te","Mo","As","P","H","Ir","Os","Pd","Ru","Pt","Rh","Pb","W","Au","C","Se","S","I","Br","N","Cl","O","F",], mat_feature_len = 83, ele_dim_features = 32, final_activation = None):
+  def __init__(self, mat_feature_len = 83, ele_dim_features = 32, final_activation = None):
     super(MaterialDecoder, self).__init__()
     self.final_activation = final_activation
-    self.element_layer = nn.Linear(ele_dim_features, len(all_eles))
+    self.element_layer = nn.Linear(ele_dim_features, mat_feature_len)
   def forward(self, inputs):
     # inputs.shape = (batch, ele_dim_features)
     mask = torch.any(torch.not_equal(inputs, 0), dim = -1)
@@ -50,7 +52,7 @@ class MaterialDecoder(nn.Module):
     else:
       raise Exception('unknown activation!')
     # map back samples to is position in the original batch
-
+    
 
 def TransformerLayer(max_mats_num,
                      hidden_size = 768,
