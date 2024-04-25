@@ -23,8 +23,10 @@ class MaterialEncoder(nn.Module):
       else:
         raise Exception('unknown activation!')
     x = x * torch.rsqrt(torch.sum(x ** 2, dim = -1, keepdim = True)) # x.shape = (reduced batch, ele_dim_features)
-    index = torch.range(inputs.shape[0])[mask]
-    x = torch.zeros((inputs.shape[0], x.shape[-1])).scatter_(dim = 0, index, x)
+    index = torch.unsqueeze(torch.range(inputs.shape[0])[mask], dim = -1) # index.shape = (reduced batch, 1)
+    index = torch.tile(index, (1, x.shape[-1])) # index.shape = (reduced batch, ele_dim_features)
+    x = torch.zeros((inputs.shape[0], x.shape[-1])).scatter_(dim = 0, index, x) # x.shape = (batch, ele_dim_features)
+    return x
 
 def TransformerLayer(max_mats_num,
                      hidden_size = 768,
