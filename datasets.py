@@ -8,7 +8,7 @@ class MaterialDataset(Dataset):
   def __init__(self, npz_path, drop_n = 1, divide = 'train'):
     assert divide in {'train', 'val', 'test'}
     data = np.load(npz_path)
-    self.samples = data[divide + 'reactions']
+    self.samples = data[divide + '_reactions']
     self.drop_n = drop_n
   def random_drop_in_list(self, input_data, sample_shape):
     if self.drop_n < 0:
@@ -49,3 +49,8 @@ class MaterialDataset(Dataset):
             'temperature': self/get_max_firing_T(r),
             'synthesis_type': r['synthesis_type']}
 
+if __name__ == "__main__":
+  md = MaterialDataset('rsc/data_split.npz')
+  for s in md:
+    print(s)
+    break
