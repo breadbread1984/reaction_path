@@ -92,7 +92,7 @@ def TransformerLayer(max_mats_num,
   config = Config(**config)
   return BertLayer(config)
 
-class PrecursorPredicter(nn.Module):
+class PrecursorPredictor(nn.Module):
   def __init__(self, vocab_size, max_mats_num = 6, attention_num_heads = 2, hidden_dropout = 0.1, attention_dropout = 0.1, num_reserved_ids = 10, mat_feature_len = 83, ele_dim_features = 32, num_attention_layers = 3, hidden_activation = 'gelu'):
     super(PrecursorPredictor, self).__init__()
     self.mat_encoder = MaterialEncoder(mat_feature_len, ele_dim_features, num_attention_layers, hidden_activation)
@@ -100,16 +100,16 @@ class PrecursorPredicter(nn.Module):
     self.incomplete_reaction_atten_layer = TransformerLayer(max_mats_num = max_mats_num, hidden_size = ele_dim_features, num_attention_heads = attention_num_heads, intermediate_size = ele_dim_features, intermediate_activation = hidden_activation, hidden_dropout_prob = hidden_dropout, attention_probs_dropout_prob = attention_dropout)
   def forward(self, targets, precursors_conditional_indices = None):
     # targets.shape = (batch, mat_feature_len), dtype = float32
-    # precursors_conditional_indices.shape = (batch, max_mats_num - 1), dtype = int32, min = 0, max = vocab_size - num_reserved_ids - 1
+    # precursors_conditional_indices.shape = (batch, max_mats_num - 1), dtype = int64, min = 0, max = vocab_size - num_reserved_ids - 1
     targets_emb = self.mat_encoder(targets) # targets_emb.shape = (batch, ele_dim_features)
     if precursors_conditional_indices is not None:
       mask = precursors_conditional_indices >= 0 # mask.shape = (batch, max_mats_num - 1)
       precursors_conditional_indices = torch.where(mask, precursors_conditional_indices, 0) # precursors_conditional_indices.shape = (batch, max_mats_num - 1)
-      precursors_conditional_emb = torch.gather(self.precursor_layer.weight, precursors_conditional_indices) # precursors_conditional_emb.shape = (batch, max_mats_num - 1, ele_dim_features)
+      precursors_conditional_emb = self.precursor_layer.weight[precursors_conditional_indices] # precursors_conditional_emb.shape = (batch, max_mats_num - 1, ele_dim_features)
       precursors_conditional_emb = torch.where(torch.tile(torch.unsqueeze(mask, dim = -1), (1, 1, precursors_conditional_emb.shape[-1])), precursors_conditional_emb, 0.) # precursors_conditional_emb.shape = (batch, max_mats_num - 1, ele_dim_features)
       incomplete_reaction_emb = torch.cat([torch.unsqueeze(targets_emb, dim = 1), precursors_conditional_emb], dim = 1) # incomplete_reaction_emb.shape = (batch, max_mats_num, ele_dim_features)
       incomplete_reaction_mask = torch.cat([torch.ones((targets_emb.shape[0], 1), dtype = torch.int32), mask.to(torch.int32)], dim = 1).to(torch.float32) # incomplete_reaction_mask.shape = (batch, max_mats_num)
-      reactions_emb = self.incomplete_reaction_atten_layer(input_tensor = incomplete_reaction_emb, attention_mask = incomplete_reaction_mask) # reactions_emb.shape = (batch, max_mats_num, ele_dim_features)
+      reactions_emb = self.incomplete_reaction_atten_layer(hidden_states = incomplete_reaction_emb, attention_mask = incomplete_reaction_mask) # reactions_emb.shape = (batch, max_mats_num, ele_dim_features)
       # only use the first token for classification
       reactions_emb = reactions_emb[:,0,:] # reactions_emb.shape = (batch, ele_dim_features)
     else:
@@ -127,11 +127,12 @@ if __name__ =="__main__":
   md = MaterialDecoder()
   outputs = md(outputs)
   print(outputs)
-  predictor = PrecursorPredicter(50)
+  predictor = PrecursorPredictor(50)
   inputs = torch.randn(4, 83)
   outputs = predictor(inputs)
   print(outputs)
-  precursors_conditional_indices = torch.distributions.uniform.Uniform(low = 0, high = 50 - 10 - 1).to(torch.int32)
+  sampler = torch.distributions.uniform.Uniform(low = 0, high = 50 - 10 - 1)
+  precursors_conditional_indices = sampler.sample(sample_shape = (4,5)).to(torch.int64)
   outputs = predictor(inputs, precursors_conditional_indices)
   print(outputs)
   #layer = TransformerLayer(1024)
