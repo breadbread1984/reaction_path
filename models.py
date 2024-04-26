@@ -100,7 +100,7 @@ class PrecursorPredicter(nn.Module):
     self.incomplete_reaction_atten_layer = TransformerLayer(max_mats_num = max_mats_num, hidden_size = ele_dim_features, num_attention_heads = attention_num_heads, intermediate_size = ele_dim_features, intermediate_activation = hidden_activation, hidden_dropout_prob = hidden_dropout, attention_probs_dropout_prob = attention_dropout)
   def forward(self, targets, precursors_conditional_indices = None):
     # targets.shape = (batch, mat_feature_len), dtype = float32
-    # precursors_conditional_indices.shape = (batch, max_mats_num - 1), dtype = int32
+    # precursors_conditional_indices.shape = (batch, max_mats_num - 1), dtype = int32, min = 0, max = vocab_size - num_reserved_ids - 1
     targets_emb = self.mat_encoder(targets) # targets_emb.shape = (batch, ele_dim_features)
     if precursors_conditional_indices is not None:
       mask = precursors_conditional_indices >= 0 # mask.shape = (batch, max_mats_num - 1)
@@ -126,6 +126,13 @@ if __name__ =="__main__":
   print(outputs)
   md = MaterialDecoder()
   outputs = md(outputs)
+  print(outputs)
+  predictor = PrecursorPredicter(50)
+  inputs = torch.randn(4, 83)
+  outputs = predictor(inputs)
+  print(outputs)
+  precursors_conditional_indices = torch.distributions.uniform.Uniform(low = 0, high = 50 - 10 - 1).to(torch.int32)
+  outputs = predictor(inputs, precursors_conditional_indices)
   print(outputs)
   #layer = TransformerLayer(1024)
 
