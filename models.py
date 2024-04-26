@@ -61,6 +61,7 @@ class MaterialDecoder(nn.Module):
     # simplified RMS normalization
     if self.norm_in_element_projection:
       x = x * torch.rsqrt(torch.sum(self.element_layer.weight ** 2, dim = -1)) # x.shape = (batch, mat_feature_len)
+    # prediction head
     x = torch.sigmoid(x) # x.shape = (batch, mat_feature_len)
     return x
 
