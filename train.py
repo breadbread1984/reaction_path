@@ -50,6 +50,9 @@ def main(unused_argv):
     mat_decoder.train()
     for step, sample in enumerate(trainset_loader):
       optimizer.zero_grad()
+      materials_featurized = sample['reaction_featurized']
+      x_mat = mat_encoder(materials_featurized)
+      mask = torch.any(materials_featurized != 0, dim = -1)
 
 
 if __name__ == "__main__":
