@@ -93,9 +93,12 @@ def TransformerLayer(max_mats_num,
   return BertLayer(config)
 
 class PrecursorPredictor(nn.Module):
-  def __init__(self, vocab_size, max_mats_num = 6, attention_num_heads = 2, hidden_dropout = 0.1, attention_dropout = 0.1, num_reserved_ids = 10, mat_feature_len = 83, ele_dim_features = 32, num_attention_layers = 3, hidden_activation = 'gelu'):
+  def __init__(self, vocab_size, mat_encoder = None, max_mats_num = 6, attention_num_heads = 2, hidden_dropout = 0.1, attention_dropout = 0.1, num_reserved_ids = 10, mat_feature_len = 83, ele_dim_features = 32, num_attention_layers = 3, hidden_activation = 'gelu'):
     super(PrecursorPredictor, self).__init__()
-    self.mat_encoder = MaterialEncoder(mat_feature_len, ele_dim_features, num_attention_layers, hidden_activation)
+    if mat_encoder is None:
+      self.mat_encoder = MaterialEncoder(mat_feature_len, ele_dim_features, num_attention_layers, hidden_activation)
+    else:
+      self.mat_encoder = mat_encoder
     self.precursor_layer = nn.Linear(ele_dim_features, vocab_size - num_reserved_ids)
     self.incomplete_reaction_atten_layer = TransformerLayer(max_mats_num = max_mats_num, hidden_size = ele_dim_features, num_attention_heads = attention_num_heads, intermediate_size = ele_dim_features, intermediate_activation = hidden_activation, hidden_dropout_prob = hidden_dropout, attention_probs_dropout_prob = attention_dropout)
   def forward(self, targets, precursors_conditional_indices = None):
