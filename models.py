@@ -92,5 +92,8 @@ if __name__ =="__main__":
   inputs = torch.Tensor([[0 for i in range(83)],[1,] + [0 for i in range(82)]]).to(torch.float32)
   outputs = me(inputs)
   print(outputs)
+  md = MaterialDecoder()
+  outputs = md(outputs)
+  print(outputs)
   #layer = TransformerLayer(1024)
 
