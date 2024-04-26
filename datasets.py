@@ -46,7 +46,7 @@ class MaterialDataset(Dataset):
     return {'reaction': [r_target] + r_precursors,
             'reaction_featurized': [r_target_featurized] + r_precursors_featurized,
             'precursors_conditional': self.random_drop_in_list(r_precursors, sample_shape = r_target.shape),
-            'temperature': self/get_max_firing_T(r),
+            'temperature': self.get_max_firing_T(r),
             'synthesis_type': r['synthesis_type']}
 
 if __name__ == "__main__":
