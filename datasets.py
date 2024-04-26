@@ -7,7 +7,7 @@ from torch.utils.data import Dataset
 class MaterialDataset(Dataset):
   def __init__(self, npz_path, drop_n = 1, divide = 'train'):
     assert divide in {'train', 'val', 'test'}
-    data = np.load(npz_path)
+    data = np.load(npz_path, allow_pickle = True)
     self.samples = data[divide + '_reactions']
     self.drop_n = drop_n
   def random_drop_in_list(self, input_data, sample_shape):
