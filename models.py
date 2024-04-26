@@ -69,27 +69,10 @@ class MaterialDecoder(nn.Module):
     x = torch.sigmoid(x) # x.shape = (batch, mat_feature_len)
     return x
 
-class PrecursorPredicter(nn.Module):
-  def __init__(self, vocab_size, num_reserved_ids = 10, mat_feature_len = 83, ele_dim_features = 32, num_attention_layers = 3, hidden_activation = 'gelu'):
-    super(PrecursorPredictor, self).__init__()
-    self.mat_encoder = MaterialEncoder(mat_feature_len, ele_dim_features, num_attention_layers, hidden_activation)
-    self.precursor_layer = nn.Linear(ele_dim_features, vocab_size - num_reserved_ids)
-  def forward(self, targets, precursors_conditional_indices = None):
-    # targets.shape = (batch, mat_feature_len), dtype = float32
-    # precursors_conditional_indices.shape = (batch, max_mats_num - 1), dtype = int32
-    targets_emb = self.mat_encoder(targets) # targets_emb.shape = (batch, ele_dim_features)
-    if precursors_conditional_indices is not None:
-      mask = precursors_conditional_indices >= 0 # mask.shape = (batch, max_mats_num - 1)
-      precursors_conditional_indices = torch.where(mask, precursors_conditional_indices, 0) # precursors_conditional_indices.shape = (batch, max_mats_num - 1)
-      precursors_conditional_emb = torch.gather(self.precursor_layer.weight, precursors_conditional_indices) # precursors_conditional_emb.shape = (batch, max_mats_num - 1, ele_dim_features)
-      precursors_conditional_emb = torch.where(torch.tile(torch.unsqueeze(mask, dim = -1), (1, 1, precursors_conditional_emb.shape[-1])), precursors_conditional_emb, 0.) # precursors_conditional_emb.shape = (batch, max_mats_num - 1, ele_dim_features)
-      incomplete_reaction_emb = torch.cat([torch.unsqueeze(targets_emb, dim = 1), precursors_conditional_emb], dim = 1) # incomplete_reaction_emb.shape = (batch, max_mats_num, ele_dim_features)
-      
-
-def TransformerLayer(max_mats_num,
+def TransformerLayer(max_mats_num, 
                      hidden_size = 768,
                      num_attention_heads = 12,
-                     intermediate_size = 3072,
+                     intermediate_size = 3072, 
                      intermediate_activation = 'gelu',
                      hidden_dropout_prob = 0.0,
                      attention_probs_dropout_prob = 0.0):
@@ -108,6 +91,24 @@ def TransformerLayer(max_mats_num,
   Config = namedtuple('config', config.keys())
   config = Config(**config)
   return BertLayer(config)
+
+class PrecursorPredicter(nn.Module):
+  def __init__(self, vocab_size, num_reserved_ids = 10, mat_feature_len = 83, ele_dim_features = 32, num_attention_layers = 3, hidden_activation = 'gelu'):
+    super(PrecursorPredictor, self).__init__()
+    self.mat_encoder = MaterialEncoder(mat_feature_len, ele_dim_features, num_attention_layers, hidden_activation)
+    self.precursor_layer = nn.Linear(ele_dim_features, vocab_size - num_reserved_ids)
+  def forward(self, targets, precursors_conditional_indices = None):
+    # targets.shape = (batch, mat_feature_len), dtype = float32
+    # precursors_conditional_indices.shape = (batch, max_mats_num - 1), dtype = int32
+    targets_emb = self.mat_encoder(targets) # targets_emb.shape = (batch, ele_dim_features)
+    if precursors_conditional_indices is not None:
+      mask = precursors_conditional_indices >= 0 # mask.shape = (batch, max_mats_num - 1)
+      precursors_conditional_indices = torch.where(mask, precursors_conditional_indices, 0) # precursors_conditional_indices.shape = (batch, max_mats_num - 1)
+      precursors_conditional_emb = torch.gather(self.precursor_layer.weight, precursors_conditional_indices) # precursors_conditional_emb.shape = (batch, max_mats_num - 1, ele_dim_features)
+      precursors_conditional_emb = torch.where(torch.tile(torch.unsqueeze(mask, dim = -1), (1, 1, precursors_conditional_emb.shape[-1])), precursors_conditional_emb, 0.) # precursors_conditional_emb.shape = (batch, max_mats_num - 1, ele_dim_features)
+      incomplete_reaction_emb = torch.cat([torch.unsqueeze(targets_emb, dim = 1), precursors_conditional_emb], dim = 1) # incomplete_reaction_emb.shape = (batch, max_mats_num, ele_dim_features)
+      incomplete_reaction_mask = torch.cat([torch.ones(targets_emb.shape[0], 1), mask], dim = 1) # incomplete_reaction_mask.shape = (batch, max_mats_num)
+      
 
 if __name__ =="__main__":
   me = MaterialEncoder()
