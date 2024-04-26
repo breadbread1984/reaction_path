@@ -109,7 +109,15 @@ class PrecursorPredicter(nn.Module):
       precursors_conditional_emb = torch.where(torch.tile(torch.unsqueeze(mask, dim = -1), (1, 1, precursors_conditional_emb.shape[-1])), precursors_conditional_emb, 0.) # precursors_conditional_emb.shape = (batch, max_mats_num - 1, ele_dim_features)
       incomplete_reaction_emb = torch.cat([torch.unsqueeze(targets_emb, dim = 1), precursors_conditional_emb], dim = 1) # incomplete_reaction_emb.shape = (batch, max_mats_num, ele_dim_features)
       incomplete_reaction_mask = torch.cat([torch.ones((targets_emb.shape[0], 1), dtype = torch.int32), mask.to(torch.int32)], dim = 1).to(torch.float32) # incomplete_reaction_mask.shape = (batch, max_mats_num)
-      
+      reactions_emb = self.incomplete_reaction_atten_layer(input_tensor = incomplete_reaction_emb, attention_mask = incomplete_reaction_mask) # reactions_emb.shape = (batch, max_mats_num, ele_dim_features)
+      # only use the first token for classification
+      reactions_emb = reactions_emb[:,0,:] # reactions_emb.shape = (batch, ele_dim_features)
+    else:
+      reactions_emb = targets_emb # reactions_emb.shape = (batch, ele_dim_features)
+    y_pred = self.precursor_layer(reactions_emb) # y_pred.shape = (batch, vocab_size - num_reserved_ids)
+    y_pred = torch.clip(y_pred, min = -10., max = 10.)
+    y_pred = torch.sigmoid(y_pred)
+    return y_pred
 
 if __name__ =="__main__":
   me = MaterialEncoder()
