@@ -60,7 +60,9 @@ class MaterialDecoder(nn.Module):
     x = torch.zeros((inputs.shape[0], self.mat_feature_len)).scatter_(dim = 0, index = index, src = x) # x.shape = (batch, mat_feature_len)
     # simplified RMS normalization
     if self.norm_in_element_projection:
-      x = x * torch.rsqrt(torch.sum(self.element_layer.weight ** 2, dim = -1)) # x.shape = 
+      x = x * torch.rsqrt(torch.sum(self.element_layer.weight ** 2, dim = -1)) # x.shape = (batch, mat_feature_len)
+    x = torch.sigmoid(x) # x.shape = (batch, mat_feature_len)
+    return x
 
 def TransformerLayer(max_mats_num,
                      hidden_size = 768,
