@@ -25,13 +25,13 @@ def add_options():
   flags.DEFINE_enum('device', default = 'cuda', enum_values = {'cpu', 'cuda'}, help = 'device to use')
 
 def main(unused_argv):
+  trainset = MaterialDataset(FLAGS.dataset, divide = 'train')
+  evalset = MaterialDataset(FLAGS.dataset, divide = 'val')
+  ele_counts = get_ele_counts(FLAGS.trainset)
+  ele_mask = ele_counts > 0
   pre_predict = PrecursorPredictor()
   mat_encoder = pre_predict.mat_encoder
   mat_decoder = MaterialDecoder()
-  trainset = MaterialDataset(FLAGS.dataset, divide = 'train')
-  evalset = MaterialDataset(FLAGS.dataset, divide = 'val')
-  ele_counts = get_ele_counts(trainset)
-  ele_mask = ele_counts > 0
   trainset_loader = DataLoader(trainset, batch_size = FLAGS.batch_size, shuffle = True, num_workers = FLAGS.workers)
   evalset_loader = DataLoader(evalset, batch_size = FLAGS.batch_size, shuffle = True, num_workers = FLAGS.workers)
   optimizer = Adam(list(pre_predict.parameters()) + list(mat_decoder.parameters()), lr = FLAGS.lr)
