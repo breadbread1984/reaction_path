@@ -63,11 +63,23 @@ def get_mat_dico(reactions, model = "all", num_reserved_ids = 10, least_count = 
   all_mats_str = get_composition_string(np.array(all_mats))
   mat_str_comp = {s: comp for (s, comp) in zip(all_mats_str, all_mats)}
   comp_shape = reactions[0]["target_comp"][0].shape # 83
-  # get all materials (distinct molecules) and their counts
+  # get all materials (distinct molecules) and their counts in dataset
   mat_labels, mat_counts = convert_list_to_dico(
     all_labels = all_mats_str,
     count_weights = all_count_weights,
     num_reserved_ids = num_reserved_ids,
     least_count = least_count)
+  # create atom count array for each material
   mat_compositions = [mat_str_comp.get(l, np.zeros(shape = comp_shape, dtype = np.float32)) for l in mat_labels]
   return mat_labels, mat_compositions, mat_counts
+
+def get_ele_counts(reactions):
+  tar_labels, tar_compositions, tar_counts = get_mat_dico(reactions, mode = 'target', least_count = 0)
+  assert len(tar_compositions) > 0
+  ele_counts = np.zeros_like(tar_compositions[0])
+  for i in range(len(tar_compositions)):
+    comp = tar_compositions[i]
+    weight = tar_counts[i]
+    ele_counts += (comp > 0) * weight
+  return ele_counts
+
