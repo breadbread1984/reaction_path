@@ -28,8 +28,8 @@ def main(unused_argv):
   trainset = MaterialDataset(FLAGS.dataset, divide = 'train')
   evalset = MaterialDataset(FLAGS.dataset, divide = 'val')
   ele_counts, tar_labels = get_ele_counts(FLAGS.dataset)
-  ele_mask = ele_counts > 0
-  vocab_size = tar_labels.shape[0] # 10 reseved tokens + number of materials
+  ele_mask = torch.from_numpy(ele_counts > 0).to(torch.float32) # ele_mask.shape = (83,)
+  vocab_size = len(tar_labels) # 10 reseved tokens + number of materials
   pre_predict = PrecursorPredictor(vocab_size = vocab_size)
   mat_encoder = pre_predict.mat_encoder
   mat_decoder = MaterialDecoder()
@@ -53,10 +53,12 @@ def main(unused_argv):
     pre_predict.train()
     mat_decoder.train()
     for step, sample in enumerate(trainset_loader):
+      reaction_featurized = sample['reaction_featurized'].to(device(FLAGS.device))
+      reaction = sample['reaction'].to(device(FLAGS.device))
       optimizer.zero_grad()
-      materials_featurized = sample['reaction_featurized']
-      x_mat = mat_encoder(materials_featurized)
-      x_mat = mat_decoder(x_mat)
+      x_mat = mat_encoder(reaction_featurized)
+      x_mat = mat_decoder(x_mat) # x_mat.shape = (batch, 83)
+      #(x_mat - reaction) *
 
 if __name__ == "__main__":
   add_options()
