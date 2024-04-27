@@ -11,7 +11,7 @@ from torch.optim import Adam
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from models import MaterialDecoder, PrecursorPredictor
 from datasets import MaterialDataset
-from utils import get_mat_dico
+from utils import get_ele_counts
 
 FLAGS = flags.FLAGS
 
@@ -30,7 +30,8 @@ def main(unused_argv):
   mat_decoder = MaterialDecoder()
   trainset = MaterialDataset(FLAGS.dataset, divide = 'train')
   evalset = MaterialDataset(FLAGS.dataset, divide = 'val')
-  tar_labels, tar_compositions, tar_counts = get_mat_dico(trainset, mode = "target", least_count = 0)
+  ele_counts = get_ele_counts(trainset)
+  ele_mask = ele_counts > 0
   trainset_loader = DataLoader(trainset, batch_size = FLAGS.batch_size, shuffle = True, num_workers = FLAGS.workers)
   evalset_loader = DataLoader(evalset, batch_size = FLAGS.batch_size, shuffle = True, num_workers = FLAGS.workers)
   optimizer = Adam(list(pre_predict.parameters()) + list(mat_decoder.parameters()), lr = FLAGS.lr)
