@@ -18,7 +18,7 @@ FLAGS = flags.FLAGS
 def add_options():
   flags.DEFINE_string('dataset', default = None, help = 'path to dataset')
   flags.DEFINE_string('ckpt', default = 'ckpt', help = 'path to ckpt')
-  flags.DEFINE_integer('batch_size', default = 32, help = 'batch size')
+  flags.DEFINE_integer('batch_size', default = 1, help = 'batch size')
   flags.DEFINE_integer('workers', default = 4, help = 'workers')
   flags.DEFINE_float('lr', default = 1e-3, help = 'learning rate')
   flags.DEFINE_integer('epoch', default = 100, help = 'epochs')
