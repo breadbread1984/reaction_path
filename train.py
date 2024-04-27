@@ -29,7 +29,7 @@ def main(unused_argv):
   evalset = MaterialDataset(FLAGS.dataset, divide = 'val')
   ele_counts, tar_labels = get_ele_counts(FLAGS.dataset)
   ele_mask = ele_counts > 0
-  vocab_size = tar_labels.shape[0]
+  vocab_size = tar_labels.shape[0] # 10 reseved tokens + number of materials
   pre_predict = PrecursorPredictor(vocab_size = vocab_size)
   mat_encoder = pre_predict.mat_encoder
   mat_decoder = MaterialDecoder()
