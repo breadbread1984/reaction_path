@@ -27,7 +27,7 @@ def add_options():
 def main(unused_argv):
   trainset = MaterialDataset(FLAGS.dataset, divide = 'train')
   evalset = MaterialDataset(FLAGS.dataset, divide = 'val')
-  ele_counts = get_ele_counts(FLAGS.trainset)
+  ele_counts = get_ele_counts(FLAGS.dataset)
   ele_mask = ele_counts > 0
   pre_predict = PrecursorPredictor()
   mat_encoder = pre_predict.mat_encoder
