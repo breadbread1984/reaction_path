@@ -27,9 +27,10 @@ def add_options():
 def main(unused_argv):
   trainset = MaterialDataset(FLAGS.dataset, divide = 'train')
   evalset = MaterialDataset(FLAGS.dataset, divide = 'val')
-  ele_counts = get_ele_counts(FLAGS.dataset)
+  ele_counts, tar_labels = get_ele_counts(FLAGS.dataset)
   ele_mask = ele_counts > 0
-  pre_predict = PrecursorPredictor()
+  vocab_size = tar_labels.shape[0]
+  pre_predict = PrecursorPredictor(vocab_size = vocab_size)
   mat_encoder = pre_predict.mat_encoder
   mat_decoder = MaterialDecoder()
   trainset_loader = DataLoader(trainset, batch_size = FLAGS.batch_size, shuffle = True, num_workers = FLAGS.workers)
