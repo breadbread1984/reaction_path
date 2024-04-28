@@ -37,7 +37,7 @@ class MaterialEncoder(nn.Module):
     index = torch.unsqueeze(torch.arange(start = 0, end = inputs.shape[0])[mask], dim = -1) # index.shape = (reduced batch, 1)
     index = torch.tile(index, (1, self.ele_dim_features)) # index.shape = (reduced batch, ele_dim_features)
     x = torch.zeros((inputs.shape[0], self.ele_dim_features)).scatter_(dim = 0, index = index, src = x) # x.shape = (batch, ele_dim_features)
-    return x
+    return x, mask
 
 class MaterialDecoder(nn.Module):
   def __init__(self, mat_feature_len = 83, ele_dim_features = 32, final_activation = None, norm_in_element_projection = False):
@@ -68,7 +68,7 @@ class MaterialDecoder(nn.Module):
       x = x * torch.rsqrt(torch.sum(self.element_layer.weight ** 2, dim = -1)) # x.shape = (batch, mat_feature_len)
     # prediction head
     x = torch.sigmoid(x) # x.shape = (batch, mat_feature_len)
-    return x
+    return x, mask
 
 def TransformerLayer(max_mats_num, 
                      hidden_size = 768,
@@ -102,7 +102,7 @@ class PrecursorPredictor(nn.Module):
   def forward(self, targets, precursors_conditional_indices = None):
     # targets.shape = (batch, mat_feature_len), dtype = float32
     # precursors_conditional_indices.shape = (batch, max_mats_num - 1), dtype = int64, min = 0, max = vocab_size - num_reserved_ids - 1
-    targets_emb = self.mat_encoder(targets) # targets_emb.shape = (batch, ele_dim_features)
+    targets_emb, _ = self.mat_encoder(targets) # targets_emb.shape = (batch, ele_dim_features)
     if precursors_conditional_indices is not None:
       mask = precursors_conditional_indices >= 0 # mask.shape = (batch, max_mats_num - 1)
       precursors_conditional_indices = torch.where(mask, precursors_conditional_indices, 0) # precursors_conditional_indices.shape = (batch, max_mats_num - 1)
@@ -124,10 +124,10 @@ class PrecursorPredictor(nn.Module):
 if __name__ =="__main__":
   me = MaterialEncoder()
   inputs = torch.Tensor([[0 for i in range(83)],[1,] + [0 for i in range(82)]]).to(torch.float32)
-  outputs = me(inputs)
+  outputs, _ = me(inputs)
   print(outputs, outputs.shape)
   md = MaterialDecoder()
-  outputs = md(outputs)
+  outputs, _ = md(outputs)
   print(outputs, outputs.shape)
   predictor = PrecursorPredictor(50)
   inputs = torch.randn(4, 83)

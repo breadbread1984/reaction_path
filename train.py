@@ -3,6 +3,7 @@
 from absl import flags, app
 from os import mkdir
 from os.path import exists, join
+import numpy as np
 import torch
 from torch import nn, save, load, no_grad, device
 from torch.utils.data import DataLoader
@@ -28,7 +29,7 @@ def main(unused_argv):
   trainset = MaterialDataset(FLAGS.dataset, divide = 'train')
   evalset = MaterialDataset(FLAGS.dataset, divide = 'val')
   ele_counts, tar_labels = get_ele_counts(FLAGS.dataset)
-  ele_mask = torch.from_numpy(ele_counts > 0).to(torch.float32) # ele_mask.shape = (83,)
+  ele_mask = torch.from_numpy(ele_counts > 0).to(torch.float32).to(device(FLAGS.device)) # ele_mask.shape = (83,)
   vocab_size = len(tar_labels) # 10 reseved tokens + number of materials
   pre_predict = PrecursorPredictor(vocab_size = vocab_size)
   mat_encoder = pre_predict.mat_encoder
@@ -53,12 +54,11 @@ def main(unused_argv):
     pre_predict.train()
     mat_decoder.train()
     for step, sample in enumerate(trainset_loader):
-      reaction_featurized = sample['reaction_featurized'].to(device(FLAGS.device))
-      reaction = sample['reaction'].to(device(FLAGS.device))
+      mat = torch.from_numpy(np.concatenate(sample['reaction'], axis = 0)).to(device(FLAGS.device)) # reaction.shape = (material num, 83)
       optimizer.zero_grad()
-      x_mat = mat_encoder(reaction_featurized)
-      x_mat = mat_decoder(x_mat) # x_mat.shape = (batch, 83)
-      #(x_mat - reaction) *
+      embed, mask = mat_encoder(mat) # embed.shape = (material num, 32) mask.shape = (material num)
+      rebuild, _ = mat_decoder(embed) # rebuild.shape = (material num, 83)
+      loss = torch.sum((embed[mask] - rebuild[mask]) ** 2, dim = -1) # loss.shape = (reduced num,)
 
 if __name__ == "__main__":
   add_options()
