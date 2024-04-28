@@ -39,7 +39,6 @@ def main(unused_argv):
   evalset_loader = DataLoader(evalset, batch_size = FLAGS.batch_size, shuffle = True, num_workers = FLAGS.workers)
   optimizer = Adam(list(pre_predict.parameters()) + list(mat_decoder.parameters()), lr = FLAGS.lr)
   scheduler = CosineAnnealingWarmRestarts(optimizer, T_0 = 5 , T_mult = 2)
-  mse = nn.MSELoss()
   if not exists(FLAGS.ckpt): mkdir(FLAGS.ckpt)
   tb_writer = SummaryWriter(log_dir = join(FLAGS.ckpt, 'summaries'))
   start_epoch = 0
@@ -55,15 +54,16 @@ def main(unused_argv):
     pre_predict.train()
     mat_decoder.train()
     for step, sample in enumerate(trainset_loader):
-      mat = torch.from_numpy(np.concatenate(sample['reaction_featurized'], axis = 0)).to(device(FLAGS.device)) # mat.shape = (material num, 83)
+      mat = torch.flatten(sample['reaction_featurized'], start_dim = 0, end_dim = 1).to(device(FLAGS.device)) # mat.shape = (batch * material num, 83)
       optimizer.zero_grad()
       # 1) mat encoder + decoder
       embed, mask = mat_encoder(mat) # embed.shape = (material num, 32) mask.shape = (material num)
       rebuild, _ = mat_decoder(embed) # rebuild.shape = (material num, 83)
       mat_decoder_loss = torch.sum(((mat - rebuild) * ele_mask) ** 2, dim = -1) # loss.shape = (material num,)
       mat_decoder_loss = mat_decoder_loss * mask.to(torch.float32) # mat_decoder_loss.shape = (material num)
+      mat_decoder_loss = torch.mean(mat_decoder)
       # 2) precursor prediction
-      targets = torch.unsqueeze(mat[0,:], dim = 0) # targets.shape = (1, 83)
+      targets = mat[:,0,:] # targets.shape = (batch, 83)
 
 if __name__ == "__main__":
   add_options()

@@ -47,11 +47,13 @@ class MaterialDataset(Dataset):
     r_precursors_index = [randrange(len(comps)) for comps in r['precursors_comp']]
     r_precursors = [r['precursors_comp'][i][j] for i, j in enumerate(r_precursors_index)]
     r_precursors_featurized = [r['precursors_comp_featurized'][i][j] for i, j in enumerate(r_precursors_index)]
-    return {'reaction': [r_target] + r_precursors + [np.zeros_like(r_target) for i in range(self.max_mats_num - 1 - len(r_precursors))],
-            'reaction_featurized': [r_target_featurized] + r_precursors_featurized + [np.zeros_like(r_target_featurized) for i in range(self.max_mats_num - 1 - len(r_precursors_featurized))],
-            'precursors_conditional': self.random_drop_in_list(r_precursors, sample_shape = r_target.shape),
+    precursors_conditional = self.random_drop_in_list(r_precursors, sample_shape = r_target.shape)
+    data = {'reaction': np.stack([r_target] + r_precursors + [np.zeros_like(r_target) for i in range(self.max_mats_num - 1 - len(r_precursors))]),
+            'reaction_featurized': np.stack([r_target_featurized] + r_precursors_featurized + [np.zeros_like(r_target_featurized) for i in range(self.max_mats_num - 1 - len(r_precursors_featurized))]),
+            'precursors_conditional': np.stack(precursors_conditional + [np.zeros_like(precursors_conditional[0]) for i in range(self.max_mats_num - 1 - len(precursors_conditional))]),
             'temperature': self.get_max_firing_T(r),
             'synthesis_type': r['synthesis_type']}
+    return data
 
 if __name__ == "__main__":
   md = MaterialDataset('rsc/data_split.npz')
