@@ -60,6 +60,7 @@ def main(unused_argv):
       embed, mask = mat_encoder(mat) # embed.shape = (material num, 32) mask.shape = (material num)
       rebuild, _ = mat_decoder(embed) # rebuild.shape = (material num, 83)
       mat_decoder_loss = torch.sum(((embed - rebuild) * ele_mask) ** 2, dim = -1) # loss.shape = (material num,)
+      mat_decoder_loss = mat_decoder_loss * mask # mat_decoder_loss.shape = (material num)
       # 2) precursor prediction
 
 
