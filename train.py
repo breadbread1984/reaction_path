@@ -32,7 +32,7 @@ def main(unused_argv):
   ele_counts, tar_labels = get_ele_counts(FLAGS.dataset)
   ele_mask = torch.from_numpy(ele_counts > 0).to(torch.float32).to(device(FLAGS.device)) # ele_mask.shape = (83,)
   vocab_size = len(tar_labels) # 10 reseved tokens + number of materials
-  pre_predict = PrecursorPredictor(vocab_size = vocab_size, max_mats_num = max_mats_num)
+  pre_predict = PrecursorPredictor(vocab_size = vocab_size, max_mats_num = FLAGS.max_mats_num)
   mat_encoder = pre_predict.mat_encoder
   mat_decoder = MaterialDecoder()
   trainset_loader = DataLoader(trainset, batch_size = FLAGS.batch_size, shuffle = True, num_workers = FLAGS.workers)
