@@ -5,7 +5,7 @@ from random import randrange, randint, sample
 from torch.utils.data import Dataset
 
 class MaterialDataset(Dataset):
-  def __init__(self, npz_path, drop_n = 1, divide = 'train'):
+  def __init__(self, npz_path, drop_n = -5, divide = 'train'):
     assert divide in {'train', 'val', 'test'}
     data = np.load(npz_path, allow_pickle = True)
     self.samples = data[divide + '_reactions']
