@@ -37,9 +37,12 @@ class MaterialDataset(Dataset):
     return len(self.samples)
   def __getitem__(self, index):
     r = self.samples[index]
+    # NOTE: if multiple materials are generated in a reaction, random pick one
     r_target_index = randrange(len(r['target_comp']))
     r_target = r['target_comp'][r_target_index]
     r_target_featurized = r['target_comp_featurized'][r_target_index]
+    # NOTE: multiple reactions can generate same targets, there are mulitple sets of precursors for a same set of targets
+    # random pick one precursor in each set of precursors
     r_precursors_index = [randrange(len(comps)) for comps in r['precursors_comp']]
     r_precursors = [r['precursors_comp'][i][j] for i, j in enumerate(r_precursors_index)]
     r_precursors_featurized = [r['precursors_comp_featurized'][i][j] for i, j in enumerate(r_precursors_index)]
