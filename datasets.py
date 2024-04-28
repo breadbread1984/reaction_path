@@ -5,11 +5,12 @@ from random import randrange, randint, sample
 from torch.utils.data import Dataset
 
 class MaterialDataset(Dataset):
-  def __init__(self, npz_path, drop_n = -5, divide = 'train'):
+  def __init__(self, npz_path, drop_n = -5, divide = 'train', max_mats_num = 6):
     assert divide in {'train', 'val', 'test'}
     data = np.load(npz_path, allow_pickle = True)
     self.samples = data[divide + '_reactions']
     self.drop_n = drop_n
+    self.max_mats_num = max_mats_num
   def random_drop_in_list(self, input_data, sample_shape):
     if self.drop_n < 0:
       drop_n = randint(1, max(min(-self.drop_n, len(input_data)), 1))
@@ -46,8 +47,8 @@ class MaterialDataset(Dataset):
     r_precursors_index = [randrange(len(comps)) for comps in r['precursors_comp']]
     r_precursors = [r['precursors_comp'][i][j] for i, j in enumerate(r_precursors_index)]
     r_precursors_featurized = [r['precursors_comp_featurized'][i][j] for i, j in enumerate(r_precursors_index)]
-    return {'reaction': [r_target] + r_precursors,
-            'reaction_featurized': [r_target_featurized] + r_precursors_featurized,
+    return {'reaction': [r_target] + r_precursors + [np.zeros_like(r_target) for i in range(self.max_mats_num - 1 - len(r_precursors))],
+            'reaction_featurized': [r_target_featurized] + r_precursors_featurized + [np.zeros_like(r_target_featurized) for i in range(self.max_mats_num - 1 - len(r_precursors_featurized))],
             'precursors_conditional': self.random_drop_in_list(r_precursors, sample_shape = r_target.shape),
             'temperature': self.get_max_firing_T(r),
             'synthesis_type': r['synthesis_type']}
