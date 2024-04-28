@@ -56,9 +56,12 @@ def main(unused_argv):
     for step, sample in enumerate(trainset_loader):
       mat = torch.from_numpy(np.concatenate(sample['reaction'], axis = 0)).to(device(FLAGS.device)) # reaction.shape = (material num, 83)
       optimizer.zero_grad()
+      # 1) mat encoder + decoder
       embed, mask = mat_encoder(mat) # embed.shape = (material num, 32) mask.shape = (material num)
       rebuild, _ = mat_decoder(embed) # rebuild.shape = (material num, 83)
-      loss = torch.sum((embed[mask] - rebuild[mask]) ** 2, dim = -1) # loss.shape = (reduced num,)
+      mat_decoder_loss = torch.sum(((embed - rebuild) * ele_mask) ** 2, dim = -1) # loss.shape = (material num,)
+      # 2) precursor prediction
+
 
 if __name__ == "__main__":
   add_options()
