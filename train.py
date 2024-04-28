@@ -19,19 +19,20 @@ FLAGS = flags.FLAGS
 def add_options():
   flags.DEFINE_string('dataset', default = None, help = 'path to dataset')
   flags.DEFINE_string('ckpt', default = 'ckpt', help = 'path to ckpt')
-  flags.DEFINE_integer('batch_size', default = 1, help = 'batch size')
+  flags.DEFINE_integer('batch_size', default = 8, help = 'batch size')
   flags.DEFINE_integer('workers', default = 4, help = 'workers')
-  flags.DEFINE_float('lr', default = 1e-3, help = 'learning rate')
+  flags.DEFINE_float('lr', default = 5e-4, help = 'learning rate')
   flags.DEFINE_integer('epoch', default = 100, help = 'epochs')
+  flags.DEFINE_integer('max_mats_num', default = 6, help = 'max number of materials in a sample')
   flags.DEFINE_enum('device', default = 'cuda', enum_values = {'cpu', 'cuda'}, help = 'device to use')
 
 def main(unused_argv):
-  trainset = MaterialDataset(FLAGS.dataset, divide = 'train')
-  evalset = MaterialDataset(FLAGS.dataset, divide = 'val')
+  trainset = MaterialDataset(FLAGS.dataset, divide = 'train', max_mats_num = FLAGS.max_mats_num)
+  evalset = MaterialDataset(FLAGS.dataset, divide = 'val', max_mats_num = FLAGS.max_mats_num)
   ele_counts, tar_labels = get_ele_counts(FLAGS.dataset)
   ele_mask = torch.from_numpy(ele_counts > 0).to(torch.float32).to(device(FLAGS.device)) # ele_mask.shape = (83,)
   vocab_size = len(tar_labels) # 10 reseved tokens + number of materials
-  pre_predict = PrecursorPredictor(vocab_size = vocab_size)
+  pre_predict = PrecursorPredictor(vocab_size = vocab_size, max_mats_num = max_mats_num)
   mat_encoder = pre_predict.mat_encoder
   mat_decoder = MaterialDecoder()
   trainset_loader = DataLoader(trainset, batch_size = FLAGS.batch_size, shuffle = True, num_workers = FLAGS.workers)
@@ -54,7 +55,7 @@ def main(unused_argv):
     pre_predict.train()
     mat_decoder.train()
     for step, sample in enumerate(trainset_loader):
-      mat = torch.from_numpy(np.concatenate(sample['reaction'], axis = 0)).to(device(FLAGS.device)) # reaction.shape = (material num, 83)
+      mat = torch.from_numpy(np.concatenate(sample['reaction_featurized'], axis = 0)).to(device(FLAGS.device)) # mat.shape = (material num, 83)
       optimizer.zero_grad()
       # 1) mat encoder + decoder
       embed, mask = mat_encoder(mat) # embed.shape = (material num, 32) mask.shape = (material num)
@@ -62,7 +63,7 @@ def main(unused_argv):
       mat_decoder_loss = torch.sum(((mat - rebuild) * ele_mask) ** 2, dim = -1) # loss.shape = (material num,)
       mat_decoder_loss = mat_decoder_loss * mask.to(torch.float32) # mat_decoder_loss.shape = (material num)
       # 2) precursor prediction
-
+      targets = torch.unsqueeze(mat[0,:], dim = 0) # targets.shape = (1, 83)
 
 if __name__ == "__main__":
   add_options()
