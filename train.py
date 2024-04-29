@@ -107,7 +107,11 @@ def main(unused_argv):
           'mat_decoder_state_dict': mat_decoder.state_dict(),
           'optimizer': optimizer.state_dict(),
           'scheduler': scheduler,
-          'epoch': epoch}
+          'epoch': epoch,
+          'tar_labels': tar_labels,
+          'ele_counts': ele_counts,
+          'max_mats_num': max_mats_num,
+          'num_reserved_ids': num_reserved_ids}
         save(ckpt, join(FLAGS.ckpt, 'model.pth'))
     scheduler.step()
     pre_predict.eval()
