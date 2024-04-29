@@ -70,8 +70,10 @@ def main(unused_argv):
       shape = pre_cond.shape
       pre_cond = np.reshape(pre_cond, (shape[0] * shape[1], shape[2])) # pre_cond.shape = (batch * (max_mat_nums - 1), 83)
       pre_cond = get_composition_string(pre_cond) # pre_cond_labels.shape = (batch * (max_mat_nums - 1),)
-      pre_cond = np.reshape(pre_cond, (shape[0], shape[1])) # pre_cond.shape = (batch, max_mat_nums - 1)
-      pre_cond_indices = [tar_labels.index(pre) for pre in pre_cond]
+      pre_cond_indices = np.array([(tar_labels.index(pre.item()) if pre.item() in tar_labels else -1) for pre in pre_cond])
+      pre_cond_indices = np.reshape(pre_cond_indices, (shape[0], shape[1])) # pre_cond_indices.shape = (batch, max_mat_nums - 1)
+      print(pre_cond_indices)
+      exit()
 
 if __name__ == "__main__":
   add_options()
