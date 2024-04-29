@@ -34,9 +34,9 @@ def main(unused_argv):
   ele_counts, tar_labels = get_ele_counts(FLAGS.dataset, num_reserved_ids = FLAGS.num_reserved_ids)
   ele_mask = torch.from_numpy(ele_counts > 0).to(torch.float32).to(device(FLAGS.device)) # ele_mask.shape = (83,)
   vocab_size = len(tar_labels) # 10 reseved tokens + number of materials
-  pre_predict = PrecursorPredictor(vocab_size = vocab_size, max_mats_num = FLAGS.max_mats_num)
+  pre_predict = PrecursorPredictor(vocab_size = vocab_size, max_mats_num = FLAGS.max_mats_num).to(device(FLAGS.device))
   mat_encoder = pre_predict.mat_encoder
-  mat_decoder = MaterialDecoder()
+  mat_decoder = MaterialDecoder().to(device(FLAGS.device))
   trainset_loader = DataLoader(trainset, batch_size = FLAGS.batch_size, shuffle = True, num_workers = FLAGS.workers)
   evalset_loader = DataLoader(evalset, batch_size = FLAGS.batch_size, shuffle = True, num_workers = FLAGS.workers)
   optimizer = Adam(list(pre_predict.parameters()) + list(mat_decoder.parameters()), lr = FLAGS.lr)
