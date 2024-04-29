@@ -12,7 +12,7 @@ from torch.optim import Adam
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from models import MaterialDecoder, PrecursorPredictor
 from datasets import MaterialDataset
-from utils import get_ele_counts
+from utils import get_ele_counts, get_composition_string
 
 FLAGS = flags.FLAGS
 
@@ -54,16 +54,22 @@ def main(unused_argv):
     pre_predict.train()
     mat_decoder.train()
     for step, sample in enumerate(trainset_loader):
-      mat = torch.flatten(sample['reaction_featurized'], start_dim = 0, end_dim = 1).to(device(FLAGS.device)) # mat.shape = (batch * material num, 83)
+      reaction_featurized = sample['reaction_featurized'].to(device(FLAGS.device)) # reaction_featurized.shape = (batch, material num, 83)
+      precursors_conditional = sample['precursors_conditional'].to(device(FLAGS.device)) # precursors_conditional.shape = (batch, max_mat_nums - 1, 83)
       optimizer.zero_grad()
       # 1) mat encoder + decoder
+      mat = torch.flatten(reaction_featurized, start_dim = 0, end_dim = 1) # mat.shape = (batch * material num, 83)
       embed, mask = mat_encoder(mat) # embed.shape = (material num, 32) mask.shape = (material num)
       rebuild, _ = mat_decoder(embed) # rebuild.shape = (material num, 83)
       mat_decoder_loss = torch.sum(((mat - rebuild) * ele_mask) ** 2, dim = -1) # loss.shape = (material num,)
       mat_decoder_loss = mat_decoder_loss * mask.to(torch.float32) # mat_decoder_loss.shape = (material num)
-      mat_decoder_loss = torch.mean(mat_decoder)
+      mat_decoder_loss = torch.mean(mat_decoder_loss)
       # 2) precursor prediction
-      targets = mat[:,0,:] # targets.shape = (batch, 83)
+      targets = reaction_featurized[:,0,:] # targets.shape = (batch, 83)
+      pre_cond = precursors_conditional.detach().cpu().numpy() # pre_cond.shape = (batch, max_mat_nums - 1, 83)
+      shape = pre_cond.shape
+      pre_cond = np.reshape(pre_cond, (shape[0] * shape[1], shape[2])) # pre_cond.shape = (batch * (max_mat_nums - 1), 83)
+      pre_cond_labels = get_composition_string(pre_cond) # pre_cond_labels.shape = (batch * (max_mat_nums - 1),)
 
 if __name__ == "__main__":
   add_options()

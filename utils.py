@@ -7,7 +7,7 @@ def get_composition_string(materials):
   # convert an array of weights representing material
   # to an array of strings representing material
   comp_str = np.char.mod('%.6f', materials)
-  comp_str = np.array([' '.join(e) for e in comp_str])
+  comp_str = np.array([bytes(' '.join(e), encoding = 'utf-8') for e in comp_str])
   return comp_str
 
 def convert_list_to_dico(all_labels, count_weights, num_reserved_ids = 10, least_count = 5):
@@ -62,7 +62,7 @@ def get_mat_dico(npz_path, mode = "all", num_reserved_ids = 10, least_count = 5)
       all_count_weights.extend([r.get('count_weight', 1.0)] * len(precursors))
   # convert all materials into strings as keys to materials
   all_mats_str = get_composition_string(np.array(all_mats))
-  mat_str_comp = {bytes(s, encoding = 'utf-8'): comp for (s, comp) in zip(all_mats_str, all_mats)}
+  mat_str_comp = {s: comp for (s, comp) in zip(all_mats_str, all_mats)}
   comp_shape = reactions[0]["target_comp"][0].shape # 83
   # get all materials (distinct molecules) and their counts in dataset
   mat_labels, mat_counts = convert_list_to_dico(
