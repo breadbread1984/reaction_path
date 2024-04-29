@@ -74,11 +74,11 @@ def get_mat_dico(npz_path, mode = "all", num_reserved_ids = 10, least_count = 5)
   mat_compositions = [mat_str_comp.get(l, np.zeros(shape = comp_shape, dtype = np.float32)) for l in mat_labels]
   return mat_labels, mat_compositions, mat_counts
 
-def get_ele_counts(npz_path):
+def get_ele_counts(npz_path, num_reserved_ids = 10):
   # tar_labels: distinct materials
   # tar_counts: time of appearance of distinct materials in dataset
   # tar_compositions: atom counts for each material
-  tar_labels, tar_compositions, tar_counts = get_mat_dico(npz_path, mode = 'all', least_count = 0)
+  tar_labels, tar_compositions, tar_counts = get_mat_dico(npz_path, mode = 'all', num_reserved_ids = num_reserved_ids, least_count = 0)
   assert len(tar_compositions) > 0
   ele_counts = np.zeros_like(tar_compositions[0]) # ele_counts.shape = (83,)
   for i in range(len(tar_compositions)):

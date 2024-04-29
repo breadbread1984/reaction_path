@@ -24,12 +24,13 @@ def add_options():
   flags.DEFINE_float('lr', default = 5e-4, help = 'learning rate')
   flags.DEFINE_integer('epoch', default = 100, help = 'epochs')
   flags.DEFINE_integer('max_mats_num', default = 6, help = 'max number of materials in a sample')
+  flags.DEFINE_integer('num_reserved_ids', default = 10, help = 'reserved token number')
   flags.DEFINE_enum('device', default = 'cuda', enum_values = {'cpu', 'cuda'}, help = 'device to use')
 
 def main(unused_argv):
   trainset = MaterialDataset(FLAGS.dataset, divide = 'train', max_mats_num = FLAGS.max_mats_num)
   evalset = MaterialDataset(FLAGS.dataset, divide = 'val', max_mats_num = FLAGS.max_mats_num)
-  ele_counts, tar_labels = get_ele_counts(FLAGS.dataset)
+  ele_counts, tar_labels = get_ele_counts(FLAGS.dataset, num_reserved_ids = FLAGS.num_reserved_ids)
   ele_mask = torch.from_numpy(ele_counts > 0).to(torch.float32).to(device(FLAGS.device)) # ele_mask.shape = (83,)
   vocab_size = len(tar_labels) # 10 reseved tokens + number of materials
   pre_predict = PrecursorPredictor(vocab_size = vocab_size, max_mats_num = FLAGS.max_mats_num)
@@ -70,10 +71,10 @@ def main(unused_argv):
       shape = pre_cond.shape
       pre_cond = np.reshape(pre_cond, (shape[0] * shape[1], shape[2])) # pre_cond.shape = (batch * (max_mat_nums - 1), 83)
       pre_cond = get_composition_string(pre_cond) # pre_cond_labels.shape = (batch * (max_mat_nums - 1),)
-      pre_cond_indices = np.array([(tar_labels.index(pre.item()) if pre.item() in tar_labels else -1) for pre in pre_cond])
+      pre_cond_indices = np.array([(tar_labels.index(pre.item()) - FLAGS.num_reserved_ids if pre.item() in tar_labels else -1) for pre in pre_cond])
       pre_cond_indices = np.reshape(pre_cond_indices, (shape[0], shape[1])) # pre_cond_indices.shape = (batch, max_mat_nums - 1)
-      print(pre_cond_indices)
-      exit()
+      pre_cond_indices = torch.from_numpy(pre_cond_indices).to(device(FLAGS.device)).to(torch.int64) # pre_cond_indices.shape = (batch, max_mat_nums - 1)
+
 
 if __name__ == "__main__":
   add_options()
