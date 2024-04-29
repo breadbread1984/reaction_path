@@ -97,5 +97,5 @@ def generate_labels(labels, class_num):
     label = np.zeros((class_num,))
     label[cls_set] = np.ones((cls_set.shape[0],))
     multi_hot.append(label)
-  multi_hot = np.stack(multi_host, axis = 0)
+  multi_hot = np.stack(multi_hot, axis = 0)
   return multi_hot
