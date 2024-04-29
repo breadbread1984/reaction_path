@@ -55,6 +55,7 @@ def main(unused_argv):
     pre_predict.train()
     mat_decoder.train()
     for step, sample in enumerate(trainset_loader):
+      reactions = sample['reaction'].to(device(FLAGS.device)) # reaction.shape = (batch, material num, 83)
       reaction_featurized = sample['reaction_featurized'].to(device(FLAGS.device)) # reaction_featurized.shape = (batch, material num, 83)
       precursors_conditional = sample['precursors_conditional'].to(device(FLAGS.device)) # precursors_conditional.shape = (batch, max_mat_nums - 1, 83)
       optimizer.zero_grad()
@@ -74,7 +75,15 @@ def main(unused_argv):
       pre_cond_indices = np.array([(tar_labels.index(pre.item()) - FLAGS.num_reserved_ids if pre.item() in tar_labels else -1) for pre in pre_cond])
       pre_cond_indices = np.reshape(pre_cond_indices, (shape[0], shape[1])) # pre_cond_indices.shape = (batch, max_mat_nums - 1)
       pre_cond_indices = torch.from_numpy(pre_cond_indices).to(device(FLAGS.device)).to(torch.int32) # pre_cond_indices.shape = (batch, max_mat_nums - 1)
-      
+      y_pred = pre_predict(targets, precursors_conditional_indices = pre_cond_indices) # y_pred.shape = (batch, vocab_size - num_reserved_ids)
+      precursors = reactions[:,1:,:].detach().cpu().numpy() # precursors.shape = (batch, max_mats_num - 1, 83)
+      shape = precursors.shape
+      precursors = np.reshape(precursors, (shape[0] * shape[1], shape[2])) # precursors.shape = (batch * (max_mat_num - 1), 83)
+      precursors = get_composition_string(precursors) # precursors.shape = (batch * (max_mat_nums - 1))
+      precursors_labels = np.array([(tar_labels.index(pre.item()) - FLAGS.num_reserved_ids if pre.item() in tar_labels else -1) for pre in precursors])
+      precursors_labels = np.reshape(precursors_labels, (shape[0], shape[1])) # precursors_labels.shape = (batch, max_mat_nums - 1)
+      precursors_labels = torch.from_numpy(precursors_labels).to(device(FLAGS.device)).to(torch.int32) # precursors_labels.shape = (batch, max_mat_nums - 1)
+
 
 if __name__ == "__main__":
   add_options()
