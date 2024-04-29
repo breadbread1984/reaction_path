@@ -39,6 +39,8 @@ class PrecursorsRecommendation(object):
     # 6) load data
     data = np.load(join(), allow_pickle = True)
     self.train_reactions = list(data['train_reactions']) + list(data['val_reactions']) + list(data['test_reactions'])
+    self.train_targets, self.train_targets_formulas, self.train_targets_features = self.collect_targets_in_reactions()
+    self.train_targets_recipes = [self.train_targets[x] for x in self.train_targets_formulas]
     # TODO
     # 7) load precursor ref
     with open(join(data_dir, 'pres_name_ref.json'), 'r') as f:
