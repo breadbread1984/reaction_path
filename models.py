@@ -60,9 +60,9 @@ class MaterialDecoder(nn.Module):
     else:
       raise Exception('unknown activation!')
     # map back samples to is position in the original batch
-    index = torch.unsqueeze(torch.arange(start = 0, end = inputs.shape[0])[mask], dim = -1) # index.shape = (reduced batch, 1)
+    index = torch.unsqueeze(torch.arange(start = 0, end = inputs.shape[0]).to(mask.device)[mask], dim = -1) # index.shape = (reduced batch, 1)
     index = torch.tile(index, (1, self.mat_feature_len)) # index.shape = (reduced batch, mat_feature_len)
-    x = torch.zeros((inputs.shape[0], self.mat_feature_len)).scatter_(dim = 0, index = index, src = x) # x.shape = (batch, mat_feature_len)
+    x = torch.zeros((inputs.shape[0], self.mat_feature_len)).to(x.device).scatter_(dim = 0, index = index, src = x) # x.shape = (batch, mat_feature_len)
     # simplified RMS normalization
     if self.norm_in_element_projection:
       x = x * torch.rsqrt(torch.sum(self.element_layer.weight ** 2, dim = -1)) # x.shape = (batch, mat_feature_len)
