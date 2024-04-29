@@ -103,7 +103,15 @@ def main(unused_argv):
         tb_writer.add_scalar('loss', loss, global_steps)
       if global_steps % FLAGS.save_freq == 0:
         ckpt = {
-        }
+          'pre_predict_state_dict': pre_predict.state_dict(),
+          'mat_decoder_state_dict': mat_decoder.state_dict(),
+          'optimizer': optimizer.state_dict(),
+          'scheduler': scheduler,
+          'epoch': epoch}
+        save(ckpt, join(FLAGS.ckpt, 'model.pth'))
+    scheduler.step()
+    pre_predict.eval()
+    mat_decoder.eval()
 
 if __name__ == "__main__":
   add_options()
