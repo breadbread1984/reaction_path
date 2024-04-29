@@ -88,3 +88,14 @@ def get_ele_counts(npz_path, num_reserved_ids = 10):
   # ele_counts: atom time of appearance in whole dataset
   return ele_counts, tar_labels
 
+def generate_labels(labels, class_num):
+  # labels.shape = (batch, max_mat_nums - 1)
+  multi_hot = list()
+  for label in labels:
+    mask = label >= 0
+    cls_set = label[mask]
+    label = np.zeros((class_num,))
+    label[cls_set] = np.ones((cls_set.shape[0],))
+    multi_hot.append(label)
+  multi_hot = np.stack(multi_host, axis = 0)
+  return multi_hot
