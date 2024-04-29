@@ -60,3 +60,9 @@ class PrecursorsRecommendation(object):
     comp = Composition(comp)
     formula = None if len(comp) == 0 else comp.get_integer_formula_and_factor(max_denominator = 1000000)[0]
     return formula
+  def call(self, target_formula, top_n = 1):
+    if isinstance(target_formula, str):
+      targets_formula = [target_formula]
+    else:
+      assert type(target_formula) is list
+
