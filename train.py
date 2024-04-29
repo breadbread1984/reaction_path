@@ -66,15 +66,15 @@ def main(unused_argv):
       mat_decoder_loss = mat_decoder_loss * mask.to(torch.float32) # mat_decoder_loss.shape = (material num)
       mat_decoder_loss = torch.mean(mat_decoder_loss)
       # 2) precursor prediction
-      targets = reaction_featurized[:,0,:] # targets.shape = (batch, 83)
+      targets = reaction_featurized[:,0,:].to(device(FLAGS.device)) # targets.shape = (batch, 83)
       pre_cond = precursors_conditional.detach().cpu().numpy() # pre_cond.shape = (batch, max_mat_nums - 1, 83)
       shape = pre_cond.shape
       pre_cond = np.reshape(pre_cond, (shape[0] * shape[1], shape[2])) # pre_cond.shape = (batch * (max_mat_nums - 1), 83)
       pre_cond = get_composition_string(pre_cond) # pre_cond_labels.shape = (batch * (max_mat_nums - 1),)
       pre_cond_indices = np.array([(tar_labels.index(pre.item()) - FLAGS.num_reserved_ids if pre.item() in tar_labels else -1) for pre in pre_cond])
       pre_cond_indices = np.reshape(pre_cond_indices, (shape[0], shape[1])) # pre_cond_indices.shape = (batch, max_mat_nums - 1)
-      pre_cond_indices = torch.from_numpy(pre_cond_indices).to(device(FLAGS.device)).to(torch.int64) # pre_cond_indices.shape = (batch, max_mat_nums - 1)
-
+      pre_cond_indices = torch.from_numpy(pre_cond_indices).to(device(FLAGS.device)).to(torch.int32) # pre_cond_indices.shape = (batch, max_mat_nums - 1)
+      
 
 if __name__ == "__main__":
   add_options()
