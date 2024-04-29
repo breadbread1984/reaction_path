@@ -43,7 +43,9 @@ class PrecursorsRecommendation(object):
                                         {'formula': mat_ref, 'elements': Composition(mat_ref).as_dict(), 'amount': '1.0'}
                                       ]} for mat, mat_ref in pres_ref.items()}
     # 7) load precursors not avail
-
+    with open(join(data_dir, 'pres_unavail.json'), 'r') as f:
+      pres_unavail = json.load(f)
+    self.pre_set_unavail_default = set(pres_unavail)
   def formula_to_array(self, formula):
     comp = Composition(formula).as_dict()
     comp_array = np.zeros((len(self.all_elements),), dtype = np.float32)
