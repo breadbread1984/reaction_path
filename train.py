@@ -12,7 +12,7 @@ from torch.optim import Adam
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from models import MaterialDecoder, PrecursorPredictor
 from datasets import MaterialDataset
-from utils import get_ele_counts, get_composition_string
+from utils import get_ele_counts, get_composition_string, generate_labels
 
 FLAGS = flags.FLAGS
 
@@ -62,7 +62,9 @@ def main(unused_argv):
       # 1) mat encoder + decoder
       mat = torch.flatten(reaction_featurized, start_dim = 0, end_dim = 1) # mat.shape = (batch * material num, 83)
       embed, mask = mat_encoder(mat) # embed.shape = (material num, 32) mask.shape = (material num)
+
       rebuild, _ = mat_decoder(embed) # rebuild.shape = (material num, 83)
+      
       mat_decoder_loss = torch.sum(((mat - rebuild) * ele_mask) ** 2, dim = -1) # loss.shape = (material num,)
       mat_decoder_loss = mat_decoder_loss * mask.to(torch.float32) # mat_decoder_loss.shape = (material num)
       mat_decoder_loss = torch.mean(mat_decoder_loss)
@@ -75,15 +77,17 @@ def main(unused_argv):
       pre_cond_indices = np.array([(tar_labels.index(pre.item()) - FLAGS.num_reserved_ids if pre.item() in tar_labels else -1) for pre in pre_cond])
       pre_cond_indices = np.reshape(pre_cond_indices, (shape[0], shape[1])) # pre_cond_indices.shape = (batch, max_mat_nums - 1)
       pre_cond_indices = torch.from_numpy(pre_cond_indices).to(device(FLAGS.device)).to(torch.int32) # pre_cond_indices.shape = (batch, max_mat_nums - 1)
-      y_pred = pre_predict(targets, precursors_conditional_indices = pre_cond_indices) # y_pred.shape = (batch, vocab_size - num_reserved_ids)
+
+      y_pred = pre_predict(targets, precursors_conditional_indices = pre_cond_indices) # y_pred.shape = (batch, ele_count - num_reserved_ids)
+
       precursors = reactions[:,1:,:].detach().cpu().numpy() # precursors.shape = (batch, max_mats_num - 1, 83)
       shape = precursors.shape
       precursors = np.reshape(precursors, (shape[0] * shape[1], shape[2])) # precursors.shape = (batch * (max_mat_num - 1), 83)
       precursors = get_composition_string(precursors) # precursors.shape = (batch * (max_mat_nums - 1))
-      precursors_labels = np.array([(tar_labels.index(pre.item()) - FLAGS.num_reserved_ids if pre.item() in tar_labels else -1) for pre in precursors])
-      precursors_labels = np.reshape(precursors_labels, (shape[0], shape[1])) # precursors_labels.shape = (batch, max_mat_nums - 1)
-      precursors_labels = torch.from_numpy(precursors_labels).to(device(FLAGS.device)).to(torch.int32) # precursors_labels.shape = (batch, max_mat_nums - 1)
-
+      y_real = np.array([(tar_labels.index(pre.item()) - FLAGS.num_reserved_ids if pre.item() in tar_labels else -1) for pre in precursors])
+      y_real = np.reshape(y_real, (shape[0], shape[1])) # y_real.shape = (batch, max_mat_nums - 1)
+      y_real = torch.from_numpy(generate_labels(y_real, len(tar_labels) - FLAGS.num_reserved_ids)).to(torch.device(FLAGS.device)) # y_real.shape = (batch, ele count - num_reserved_ids)
+      
 
 if __name__ == "__main__":
   add_options()
