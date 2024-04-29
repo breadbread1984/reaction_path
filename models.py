@@ -109,7 +109,7 @@ class PrecursorPredictor(nn.Module):
       precursors_conditional_emb = self.precursor_layer.weight[precursors_conditional_indices] # precursors_conditional_emb.shape = (batch, max_mats_num - 1, ele_dim_features)
       precursors_conditional_emb = torch.where(torch.tile(torch.unsqueeze(mask, dim = -1), (1, 1, precursors_conditional_emb.shape[-1])), precursors_conditional_emb, 0.) # precursors_conditional_emb.shape = (batch, max_mats_num - 1, ele_dim_features)
       incomplete_reaction_emb = torch.cat([torch.unsqueeze(targets_emb, dim = 1), precursors_conditional_emb], dim = 1) # incomplete_reaction_emb.shape = (batch, max_mats_num, ele_dim_features)
-      incomplete_reaction_mask = torch.cat([torch.ones((targets_emb.shape[0], 1), dtype = torch.int32), mask.to(torch.int32)], dim = 1).to(torch.float32) # incomplete_reaction_mask.shape = (batch, max_mats_num)
+      incomplete_reaction_mask = torch.cat([torch.ones((targets_emb.shape[0], 1).to(mask.device), dtype = torch.int32), mask.to(torch.int32)], dim = 1).to(torch.float32) # incomplete_reaction_mask.shape = (batch, max_mats_num)
       incomplete_reaction_mask = torch.reshape(incomplete_reaction_mask, (incomplete_reaction_mask.shape[0],1,1,incomplete_reaction_mask.shape[-1])) # incomplete_reaction_mask.shape = (batch, 1, 1, max_mats_num)
       reactions_emb, = self.incomplete_reaction_atten_layer(hidden_states = incomplete_reaction_emb, attention_mask = incomplete_reaction_mask) # reactions_emb.shape = (batch, max_mats_num, ele_dim_features)
       # only use the first token for classification
