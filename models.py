@@ -36,7 +36,7 @@ class MaterialEncoder(nn.Module):
     # map back samples to its position in the original batch
     index = torch.unsqueeze(torch.arange(start = 0, end = inputs.shape[0]).to(mask.device)[mask], dim = -1) # index.shape = (reduced batch, 1)
     index = torch.tile(index, (1, self.ele_dim_features)) # index.shape = (reduced batch, ele_dim_features)
-    x = torch.zeros((inputs.shape[0], self.ele_dim_features)).scatter_(dim = 0, index = index, src = x) # x.shape = (batch, ele_dim_features)
+    x = torch.zeros((inputs.shape[0], self.ele_dim_features)).to(x.device).scatter_(dim = 0, index = index, src = x) # x.shape = (batch, ele_dim_features)
     return x, mask
 
 class MaterialDecoder(nn.Module):
