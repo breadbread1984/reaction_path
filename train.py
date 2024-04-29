@@ -112,6 +112,37 @@ def main(unused_argv):
     scheduler.step()
     pre_predict.eval()
     mat_decoder.eval()
+    for step, sample in enumerate(evalset_loader):
+      reactions = sample['reaction'].to(device(FLAGS.device))
+      reaction_featurized = sample['reaction_featurized'].to(device(FLAGS.device))
+      precursors_conditional = sample['precursors_conditional'].to(device(FLAGS.device))
+      # 1) mat encoder + decoder
+      mat = torch.flatten(reaction_featurized, start_dim = 0, end_dim = 1)
+      embed, mask = mat_encoder(mat)
+      rebuild, _ = mat_decoder(embed)
+      mat_decoder_loss = torch.sum(((mat - rebuild) * ele_mask) ** 2, dim = -1)
+      mat_decoder_loss = mat_decoder_loss * mask.to(torch.float32)
+      mat_decoder_loss = torch.mean(mat_decoder_loss)
+      # 2) precursor prediction
+      targets = reaction_featurized[:,0,:].to(device(FLAGS.device))
+      pre_cond = precursors_conditional.detach().cpu().numpy()
+      shape = pre_cond.shape
+      pre_cond = np.reshape(pre_cond, (shape[0] * shape[1], shape[2]))
+      pre_cond = get_composition_string(pre_cond)
+      pre_cond_indices = np.array([(tar_labels.index(pre.item()) - FLAGS.num_reserved_ids if pre.item() in tar_labels else -1) for pre in pre_cond])
+      pre_cond_indices = np.reshape(pre_cond_indices, (shape[0], shape[1]))
+      pre_cond_indices = torch.from_numpy(pre_cond_indices).to(device(FLAGS.device)).to(torch.int32)
+      y_pred = pre_predict(targets, precursors_conditional_indices = pre_cond_indices)
+      precursors = reactions[:,1:,:].detach().cpu().numpy()
+      shape = precursors.shape
+      precursors = np.reshape(precursors, (shape[0] * shape[1], shape[2]))
+      precursors = get_composition_string(precursors)
+      y_real = np.array([(tar_labels.index(pre.item()) - FLAGS.num_reserved_ids if pre.item() in tar_labels else -1) for pre in precursors])
+      y_real = np.reshape(y_real, (shape[0], shape[1]))
+      y_real = torch.from_numpy(generate_labels(y_real, len(tar_labels) - FLAGS.num_reserved_ids)).to(torch.device(FLAGS.device))
+      pre_loss = torch.sum(y_real * (-torch.log(y_pred)) + (1 - y_real) * (-torch.log(1 - y_pred)), dim = -1)
+      pre_loss = torch.mean(pre_loss, dim = 0)
+      print('evaluate: loss %f rebuild loss %f precursors pred loss %f' % (loss, mat_decoder_loss, pre_loss))
 
 if __name__ == "__main__":
   add_options()
