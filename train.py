@@ -26,6 +26,7 @@ def add_options():
   flags.DEFINE_integer('max_mats_num', default = 6, help = 'max number of materials in a sample')
   flags.DEFINE_integer('num_reserved_ids', default = 10, help = 'reserved token number')
   flags.DEFINE_enum('device', default = 'cuda', enum_values = {'cpu', 'cuda'}, help = 'device to use')
+  flags.DEFINE_integer('save_freq', default = 1000, help = 'checkpoint save frequency')
 
 def main(unused_argv):
   trainset = MaterialDataset(FLAGS.dataset, divide = 'train', max_mats_num = FLAGS.max_mats_num)
@@ -87,7 +88,22 @@ def main(unused_argv):
       y_real = np.array([(tar_labels.index(pre.item()) - FLAGS.num_reserved_ids if pre.item() in tar_labels else -1) for pre in precursors])
       y_real = np.reshape(y_real, (shape[0], shape[1])) # y_real.shape = (batch, max_mat_nums - 1)
       y_real = torch.from_numpy(generate_labels(y_real, len(tar_labels) - FLAGS.num_reserved_ids)).to(torch.device(FLAGS.device)) # y_real.shape = (batch, ele count - num_reserved_ids)
-      
+      pre_loss = torch.sum(y_real * (-torch.log(y_pred)) + (1 - y_real) * (-torch.log(1 - y_pred)), dim = -1)
+      pre_loss = torch.mean(pre_loss, dim = 0)
+
+      # 3) total loss
+      loss = mat_decoder_loss * 0.1 + pre_loss * 1.0
+      loss.backward()
+      optimizer.step()
+      global_steps = epoch * len(trainset_loader) + step
+      if global_steps % 100 == 0:
+        print('Step #%d Epoch #%d: loss %f rebuild loss %f precursors pred loss %f' % (global_steps, epoch, loss, mat_decoder_loss, pre_loss))
+        tb_writer.add_scalar('rebuild loss', mat_decoder_loss, global_steps)
+        tb_writer.add_scalar('precursors pred loss', pre_loss, global_steps)
+        tb_writer.add_scalar('loss', loss, global_steps)
+      if global_steps % FLAGS.save_freq == 0:
+        ckpt = {
+        }
 
 if __name__ == "__main__":
   add_options()
