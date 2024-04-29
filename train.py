@@ -69,7 +69,9 @@ def main(unused_argv):
       pre_cond = precursors_conditional.detach().cpu().numpy() # pre_cond.shape = (batch, max_mat_nums - 1, 83)
       shape = pre_cond.shape
       pre_cond = np.reshape(pre_cond, (shape[0] * shape[1], shape[2])) # pre_cond.shape = (batch * (max_mat_nums - 1), 83)
-      pre_cond_labels = get_composition_string(pre_cond) # pre_cond_labels.shape = (batch * (max_mat_nums - 1),)
+      pre_cond = get_composition_string(pre_cond) # pre_cond_labels.shape = (batch * (max_mat_nums - 1),)
+      pre_cond = np.reshape(pre_cond, (shape[0], shape[1])) # pre_cond.shape = (batch, max_mat_nums - 1)
+      pre_cond_indices = [tar_labels.index(pre) for pre in pre_cond]
 
 if __name__ == "__main__":
   add_options()
