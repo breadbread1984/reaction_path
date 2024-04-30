@@ -61,7 +61,7 @@ class PrecursorsRecommendation(object):
     # NOTE: convert a formula to a vector of floats representing atom number proportion among all atoms of a material
     comp = Composition(formula).as_dict()
     comp_array = np.zeros((len(self.all_elements),), dtype = np.float32)
-    for c, v in composition.items():
+    for c, v in comp.items():
       comp_array[self.all_elements.index(c)] = v
     # normalized by total number of atoms
     comp_array /= max(np.sum(comp_array), 1e-6)
