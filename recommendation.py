@@ -240,7 +240,7 @@ class PrecursorsRecommendation(object):
                         pre_list_pred = np.array(self.tar_labels[self.num_reserved_ids:])[a_y > 0.5]
                         pre_score_pred = a_y[a_y > 0.5]
                     pre_lists_pred.append([{'composition': comp, 'score': score} for (comp, score) in zip(pre_list_pred, pre_score_pred)])
-                    pre_lists_pred[-1] = sorted(all_pre_lists[-1], key = lambda x: x['score'], reverse = True)
+                    pre_lists_pred[-1] = sorted(pre_lists_pred[-1], key = lambda x: x['score'], reverse = True)
                     pre_str_lists_pred = list()
                     for i, tar_comp in enumerate(target_compositions):
                         pre_str_list = [(self.array_to_formula(comp['composition'], self.all_elements), comp['score']) for comp in pre_lists_pred[i]]
