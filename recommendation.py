@@ -254,6 +254,8 @@ class PrecursorsRecommendation(object):
                             pre_lists_pred[0], pre_str_lists_pred[0]
                         ):
                             p_comp = p_comp_prob["composition"]
+                            p_comp = np.array(p_comp.decode('utf-8').split(' ')).astype(np.float32)
+                            assert p_comp.shape[0] == len(self.all_elements)
                             p_f = p_f_prob[0]
                             p_eles = set(np.array(self.all_elements)[p_comp > 0])
                             if p_f in pres_predict:
