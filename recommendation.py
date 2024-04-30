@@ -86,21 +86,183 @@ class PrecursorsRecommendation(object):
     all_distance_by_formula = {test_targets_formulas[i]: all_distance[i] for i in range(len(test_targets_formulas))}
     all_preds_predict, all_predicts = self.
     # TODO
+  def recommend_precursors_by_similarity(self, test_targets_formulas, train_targets_recipes, all_distance, test_targets_compositions = None, test_targets_features = None, top_n = 1, validate_first_attempt = False, path_log = "dist_reaction.txt", common_eles = ("C", "H", "O", "N"), strategy = "conditional", precursors_not_available = None,):
+        all_pres_predict = []
+        all_rxns_predict = []
+        ref_precursors_comp = {}
+        ref_materials_comp = {}
+        common_eles = set(common_eles)
+        if precursors_not_available is None:
+            precursors_not_available = set()
+
+        all_predicts = []
+        print("len(test_targets_formulas)", len(test_targets_formulas))
+        print("top_n", top_n)
+        for x_index, x in enumerate(test_targets_formulas):
+            if x_index % 10 == 0:
+                print(
+                    "x_index: {} out of {}".format(x_index, len(test_targets_formulas))
+                )
+            most_similar_y_index = np.argsort(all_distance[x_index, :])[::-1]
+
+            all_predicts.append(
+                {
+                    "target_formula": x,
+                    "precursors_predicts": [],
+                }
+            )
+
+            eles_x = set(get_elements_in_formula(x))
+            pres_candidates = []
+            zero_composition = np.zeros(
+                shape=(len(self.all_elements),),
+                dtype=np.float32,
+            )
+            for y_index in most_similar_y_index[: 300 * top_n]:
+                # 30*top_n is sufficient to get recommendations
+                # no need to check all ref targets
+                # all recipes for each target used by freq here
+                pres_candidates.extend(
+                    [
+                        item[0]
+                        for item in train_targets_recipes[y_index]["pres"].most_common()
+                    ]
+                )
+            # reformat pres_candidates (formula -> eles)
+            pres_candidates, ref_precursors_comp = self._reformat_precursors(
+                pres_candidates=pres_candidates,
+                ref_precursors_comp=ref_precursors_comp,
+            )
+
+            pres_multi_predicts = []
+
+            # add common precursors
+            if top_n > 1:
+                pres_predict = self.common_precursors_recommendation(
+                    eles_target=eles_x,
+                    common_precursors=self.common_precursors,
+                    common_eles=common_eles,
+                    validate_first_attempt=validate_first_attempt,
+                    # validate_reaction=validate_reaction,
+                    target_formula=x,
+                    ref_materials_comp=ref_materials_comp,
+                )
+                if pres_predict is not None:
+                    pres_multi_predicts.append(pres_predict)
+                    all_predicts[-1]["precursors_predicts"].append(pres_predict)
+
+            pres_conditional_tried = set()
+            for i in range(len(pres_candidates)):
+                pres_predict = set()
+                eles_covered = {
+                    "O",
+                    "H",
+                }
+                precursors_conditional = []
+
+                pres = pres_candidates[i]
+                for p in pres.values():
+                    if p["formula"] in pres_predict:
+                        continue
+                    if p["elements"].issubset(eles_x | common_eles):
+                        pres_predict.add(p["formula"])
+                        eles_covered |= p["elements"]
+                        precursors_conditional.append(p["composition"])
+
+                # print('pres_predict 1', pres_predict)
+                if not eles_x.issubset(eles_covered):
+                    if tuple(sorted(pres_predict)) in pres_conditional_tried:
+                        continue
+                    pres_conditional_tried.add(tuple(sorted(pres_predict)))
+                    if strategy == "conditional":
+                        for _ in range(len(pres_predict), self.max_mats_num - 1):
+                            precursors_conditional.append(zero_composition)
+                        (
+                            pre_lists_pred,
+                            pre_str_lists_pred,
+                        ) = self.predict_precursor_callback.predict_precursors(
+                            self.framework_model,
+                            target_compositions=np.expand_dims(
+                                test_targets_compositions[x_index], axis=0
+                            ),
+                            target_features=np.expand_dims(
+                                test_targets_features[x_index], axis=0
+                            ),
+                            precursors_conditional=np.expand_dims(
+                                precursors_conditional, axis=0
+                            ),
+                            to_print=False,
+                        )
+                        for ele in eles_x - eles_covered:
+                            if eles_x.issubset(eles_covered):
+                                # done
+                                break
+                            for (p_comp_prob, p_f_prob) in zip(
+                                pre_lists_pred[0], pre_str_lists_pred[0]
+                            ):
+                                p_comp = p_comp_prob["composition"]
+                                p_f = p_f_prob[0]
+                                p_eles = set(np.array(self.all_elements)[p_comp > 0])
+                                if p_f in pres_predict:
+                                    continue
+                                if p_f in precursors_not_available:
+                                    continue
+                                if ele in p_eles and p_eles.issubset(
+                                    eles_x | common_eles
+                                ):
+                                    pres_predict.add(p_f)
+                                    eles_covered |= p_eles
+                                    break
+                    elif strategy == "naive_common":
+                        # add metal/metalloid sources first
+                        for ele in (eles_x - eles_covered) & all_extended_metal_eles:
+                            if ele in self.common_precursors:
+                                pres_predict.add(self.common_precursors[ele]["formula"])
+                                eles_covered |= set(
+                                    self.common_precursors[ele]["elements"]
+                                )
+                        # add nonvolatile nonmetal elements if necessary
+                        for ele in eles_x - eles_covered:
+                            if ele in self.common_precursors:
+                                pres_predict.add(self.common_precursors[ele]["formula"])
+                                eles_covered |= set(
+                                    self.common_precursors[ele]["elements"]
+                                )
+
+                if not eles_x.issubset(eles_covered):
+                    continue
+
+                pres_predict = tuple(sorted(pres_predict))
+                # precursors recommended or not
+                if pres_predict in pres_multi_predicts:
+                    # is_recommended = True
+                    continue
+                pres_multi_predicts.append(pres_predict)
+                all_predicts[-1]["precursors_predicts"].append(pres_predict)
+
+                if len(pres_multi_predicts) >= top_n:
+                    break
+
+            all_pres_predict.append(pres_multi_predicts)
+        return all_pres_predict, all_predicts
   def collect_targets_in_reactions(self, data_dir):
     data = np.load(join(data_dir, 'data_split.npz'), allow_pickle = True)
     train_reactions = list(data['train_reactions']) + list(data['val_reactions']) + list(data['test_reactions'])
     raw_indices_train = set()
     train_targets = dict()
     for r in train_reactions:
-      tar_f = self.array_to_formula(r['target_comp'][0], self.all_elements)
+      # save formula of target to string tar_f
+      tar_f = self.array_to_formula(r['target_comp'][0])
       if len(r['target_comp']) > 1:
         print("len(r['target_comp'])", len(r['target_comp']))
       assert len(r['target_comp']) == 1, "Reaction not expanded"
+      # save formulas of precursors to tuple pre_fs
       for x in r['precursors_comp']:
         assert len(x) == 1, "Reaction not expanded"
-      pre_fs = set([self.array_to_formula(x[0], self.all_elements) for x in r['precursors_comp']])
+      pre_fs = set([self.array_to_formula(x[0]) for x in r['precursors_comp']])
       assert len(pre_fs) == len(r["precursors_comp"]), "len(pre_fs) != len(r['precursors_comp'])"
       pre_fs = tuple(sorted(pre_fs))
+      # insert target and related info into train_targets
       if tar_f not in train_targets:
         train_targets[tar_f] = {
           "comp": r["target_comp"][0],
@@ -110,7 +272,7 @@ class PrecursorsRecommendation(object):
           "syn_type_pres": collections.Counter(),
           "raw_index": set(),
           "is_common": collections.Counter(),
-          "pres_raw_index": {},
+          "pres_raw_index": dict(),
         }
       train_targets[tar_f]["pres"][pre_fs] += 1
       train_targets[tar_f]["raw_index"].add(r["raw_index"])
