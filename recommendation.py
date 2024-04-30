@@ -313,7 +313,7 @@ class PrecursorsRecommendation(object):
 if __name__ == "__main__":
   recommend = PrecursorsRecommendation()
   all_predicts = recommend.call(
-    target_formula = [
+    targets_formula = [
       "SrZnSO",
       "Na3TiV(PO4)3",
       "GdLu(MoO4)3",
