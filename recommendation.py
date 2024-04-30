@@ -67,7 +67,7 @@ class PrecursorsRecommendation(object):
     return comp_array
   def array_to_formula(self, comp_array):
     # NOTE: convert a vector of floats representing atom number proportion among all atoms of a material to a formula
-    composition = dict(filter(lambd x: x[1] > 0, zip(self.all_elements, comp_array)))
+    composition = dict(filter(lambda x: x[1] > 0, zip(self.all_elements, comp_array)))
     comp = {k: float(v) for k, v in composition.items()}
     comp = Composition(comp)
     formula = None if len(comp) == 0 else comp.get_integer_formula_and_factor(max_denominator = 1000000)[0]
@@ -309,3 +309,14 @@ class PrecursorsRecommendation(object):
     print("len(train_targets)", len(train_targets))
     return train_targets, train_targets_formulas, train_targets_features
 
+if __name__ == "__main__":
+  recommend = PrecursorsRecommendation()
+  all_predicts = recommend.call(
+    target_formula = [
+      "SrZnSO",
+      "Na3TiV(PO4)3",
+      "GdLu(MoO4)3",
+      "BaYSi2O5N",
+      "Cu3Yb(SeO3)2O2Cl",
+    ], top_n = 10)
+  print(all_predicts)
