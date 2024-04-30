@@ -44,7 +44,7 @@ class PrecursorsRecommendation(object):
     self.train_targets, self.train_targets_formulas, self.train_targets_features = self.collect_targets_in_reactions(data_dir)
     self.train_targets_recipes = [self.train_targets[x] for x in self.train_targets_formulas]
     self.train_targets_vecs = self.mat_encoder(torch.from_numpy(np.stack(self.train_targets_features)))[0].detach().cpu().numpy()
-    self.train_targets_vecs = self.train_targets_vecs / np.linalg.norm(self.train_targets_vecs, axis = -1, keedims = True)
+    self.train_targets_vecs = self.train_targets_vecs / np.linalg.norm(self.train_targets_vecs, axis = -1, keepdims = True)
     # 7) load precursor ref
     with open(join(data_dir, 'pres_name_ref.json'), 'r') as f:
       pres_ref = json.load(f)
