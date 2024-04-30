@@ -112,7 +112,7 @@ class PrecursorsRecommendation(object):
                 if p in ref_precursors_comp:
                     p_comp = ref_precursors_comp[p]
                 else:
-                    p_comp = formula_to_array(p, self.all_elements)
+                    p_comp = self.formula_to_array(p)
                     ref_precursors_comp[p] = p_comp
                 # TODO: can i also make self.all_elements as ndarray?
                 p_eles = set(np.array(self.all_elements)[p_comp > 0])
