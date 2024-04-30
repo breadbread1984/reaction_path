@@ -79,6 +79,8 @@ class PrecursorsRecommendation(object):
     targets_features = np.array([comp.copy() for comp in targets_compositions])
     targets_vecs = self.mat_encoder(torch.from_numpy(targets_features)).detach().cpu().numpy()
     targets_vecs = targets_vecs / np.linalg.norm(target_vecs, axis = -1, keepdims = True)
+    all_distance = target_vecs @ self.train_targets_vecs.T
+    # TODO
   def collect_targets_in_reactions(self,):
     raw_indices_train = set()
     train_targets = dict()
