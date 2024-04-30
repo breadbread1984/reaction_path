@@ -15,8 +15,8 @@ class PrecursorsRecommendation(object):
     # 1) load model
     ckpt = load(join(model_dir, 'model.pth'), map_location = torch.device(device))
     tar_labels = ckpt['tar_labels']
-    max_mats_num = ckpt['max_mats_num']
-    self.pre_predict = PrecursorPredictor(vocab_size = len(tar_labels), max_mats_num = max_mats_num).to(torch.device(device))
+    self.max_mats_num = ckpt['max_mats_num']
+    self.pre_predict = PrecursorPredictor(vocab_size = len(tar_labels), max_mats_num = self.max_mats_num).to(torch.device(device))
     self.pre_predict.load_state_dict(ckpt['pre_predict_state_dict'])
     self.pre_predict.eval()
     self.mat_encoder = self.pre_predict.mat_encoder
