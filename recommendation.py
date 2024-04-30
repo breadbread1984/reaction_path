@@ -43,7 +43,7 @@ class PrecursorsRecommendation(object):
     # 6) load data
     self.train_targets, self.train_targets_formulas, self.train_targets_features = self.collect_targets_in_reactions(data_dir)
     self.train_targets_recipes = [self.train_targets[x] for x in self.train_targets_formulas]
-    self.train_targets_vecs = self.mat_encoder(torch.from_numpy(np.stack(self.train_targets_features))).detach().cpu().numpy()
+    self.train_targets_vecs = self.mat_encoder(torch.from_numpy(np.stack(self.train_targets_features)))[0].detach().cpu().numpy()
     self.train_targets_vecs = self.train_targets_vecs / np.linalg.norm(self.train_targets_vecs, axis = -1, keedims = True)
     # 7) load precursor ref
     with open(join(data_dir, 'pres_name_ref.json'), 'r') as f:
@@ -87,7 +87,7 @@ class PrecursorsRecommendation(object):
       raise NotImplementedError
     targets_compositions = [self.formula_to_array(formula) for formula in targets_formula]
     targets_features = np.array([comp.copy() for comp in targets_compositions])
-    targets_vecs = self.mat_encoder(torch.from_numpy(targets_features)).detach().cpu().numpy()
+    targets_vecs = self.mat_encoder(torch.from_numpy(targets_features))[0].detach().cpu().numpy()
     targets_vecs = targets_vecs / np.linalg.norm(target_vecs, axis = -1, keepdims = True)
     all_distance = target_vecs @ self.train_targets_vecs.T
     all_distance_by_formula = {test_targets_formulas[i]: all_distance[i] for i in range(len(test_targets_formulas))}
