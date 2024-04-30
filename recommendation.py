@@ -73,7 +73,7 @@ class PrecursorsRecommendation(object):
     comp = Composition(comp)
     formula = None if len(comp) == 0 else comp.get_integer_formula_and_factor(max_denominator = 1000000)[0]
     return formula
-  def call(self, targets_formula, top_n = 1, strategy = 'conditional', precursors_not_available = "default"):
+  def call(self, target_formula, top_n = 1, strategy = 'conditional', precursors_not_available = "default"):
     assert strategy in {'conditional', 'naive'}
     if isinstance(target_formula, str):
       targets_formula = [target_formula]
@@ -85,7 +85,7 @@ class PrecursorsRecommendation(object):
       precursors_not_available = self.pre_set_unavail_default
     elif isinstance(precursors_not_available, str):
       raise NotImplementedError
-    targets_compositions = [self.formula_to_array(formula) for formula in targets_formula]
+    targets_compositions = [self.formula_to_array(formula) for formula in target_formula]
     targets_features = np.array([comp.copy() for comp in targets_compositions])
     targets_vecs = self.mat_encoder(torch.from_numpy(targets_features))[0].detach().cpu().numpy()
     targets_vecs = targets_vecs / np.linalg.norm(target_vecs, axis = -1, keepdims = True)
@@ -313,7 +313,7 @@ class PrecursorsRecommendation(object):
 if __name__ == "__main__":
   recommend = PrecursorsRecommendation()
   all_predicts = recommend.call(
-    targets_formula = [
+    target_formula = [
       "SrZnSO",
       "Na3TiV(PO4)3",
       "GdLu(MoO4)3",
