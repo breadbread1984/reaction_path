@@ -235,26 +235,17 @@ class PrecursorsRecommendation(object):
                     pre_cond_label = np.expand_dims(pre_cond_label, axis = 0) # (1, max_mat_nums - 1)
                     y_pred = self.pre_predict(torch.from_numpy(target_features), precursors_conditional_indices = torch.from_numpy(pre_cond_label)) # y_pred.shape = (batch, mat_count - num_reserved_ids)
                     y_pred = y_pred.detach().cpu().numpy()
-                    import pdb; pdb.set_trace()
+                    pre_lists_pred = list()
                     for a_y in y_pred:
-                        pre_list_pred
-                    # TODO
-                    (
-                        pre_lists_pred,
-                        pre_str_lists_pred,
-                    ) = self.predict_precursor_callback.predict_precursors(
-                        self.framework_model,
-                        target_compositions=np.expand_dims(
-                                test_targets_compositions[x_index], axis=0
-                        ),
-                        target_features=np.expand_dims(
-                                test_targets_features[x_index], axis=0
-                        ),
-                        precursors_conditional=np.expand_dims(
-                                precursors_conditional, axis=0
-                        ),
-                        to_print=False,
-                    )
+                        pre_list_pred = self.tar_labels[self.num_reserved_ids:][a_y > 0.5]
+                        pre_score_pred = a_y[a_y > 0.5]
+                    pre_lists_pred.append([{'composition': comp, 'score': score} for (comp, score) in zip(pre_list_pred, pre_score_pred)])
+                    pre_lists_pred[-1] = sorted(all_pre_lists[-1], key = lambda x: x['score'], reverse = True)
+                    pre_str_lists_pred = list()
+                    for i, tar_comp in enumerate(target_compositions):
+                        pre_str_list = [(self.array_to_formula(comp['composition'], self.all_elements), comp['score']) for comp in pre_lists_pred[i]]
+                        pre_str_lists_pred.append(pre_str_list)
+                    # NOTE: here
                     for ele in eles_x - eles_covered:
                         if eles_x.issubset(eles_covered):
                             # done
