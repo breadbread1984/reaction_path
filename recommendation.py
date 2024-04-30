@@ -8,15 +8,17 @@ import numpy as np
 import torch
 from torch import load
 from models import PrecursorPredictor
+from utils import get_composition_string
 
 class PrecursorsRecommendation(object):
   def __init__(self, model_dir = 'ckpt', data_dir = 'rsc', device = 'cpu'):
     assert device in {'cpu', 'cuda'}
     # 1) load model
     ckpt = load(join(model_dir, 'model.pth'), map_location = torch.device(device))
-    tar_labels = ckpt['tar_labels']
+    self.tar_labels = ckpt['tar_labels']
     self.max_mats_num = ckpt['max_mats_num']
-    self.pre_predict = PrecursorPredictor(vocab_size = len(tar_labels), max_mats_num = self.max_mats_num).to(torch.device(device))
+    self.num_reserved_ids = ckpt['num_reserved_ids']
+    self.pre_predict = PrecursorPredictor(vocab_size = len(self.tar_labels), max_mats_num = self.max_mats_num).to(torch.device(device))
     self.pre_predict.load_state_dict(ckpt['pre_predict_state_dict'])
     self.pre_predict.eval()
     self.mat_encoder = self.pre_predict.mat_encoder
@@ -224,60 +226,55 @@ class PrecursorsRecommendation(object):
                     if tuple(sorted(pres_predict)) in pres_conditional_tried:
                         continue
                     pres_conditional_tried.add(tuple(sorted(pres_predict)))
-                    if strategy == "conditional":
-                        for _ in range(len(pres_predict), self.max_mats_num - 1):
-                            precursors_conditional.append(zero_composition)
-                        (
-                            pre_lists_pred,
-                            pre_str_lists_pred,
-                        ) = self.predict_precursor_callback.predict_precursors(
-                            self.framework_model,
-                            target_compositions=np.expand_dims(
+                    for _ in range(len(pres_predict), self.max_mats_num - 1):
+                        precursors_conditional.append(zero_composition)
+                    target_compositions = np.expand_dims(test_targets_compositions[x_index], axis = 0)
+                    target_features = np.expand_dims(test_targets_features[x_index], axis = 0)
+                    pre_cond = get_composition_string(precursors_conditional)
+                    pre_cond_label = np.array([(self.tar_labels.index(pre.item()) - self.num_reserved_ids if pre.item() in self.tar_labels else -1) for pre in pre_cond])
+                    pre_cond_label = np.expand_dims(pre_cond_label, axis = 0) # (1, max_mat_nums - 1)
+                    y_pred = self.pre_predict(torch.from_numpy(target_features), precursors_conditional_indices = torch.from_numpy(pre_cond_label)) # y_pred.shape = (batch, mat_count - num_reserved_ids)
+                    y_pred = y_pred.detach().cpu().numpy()
+                    import pdb; pdb.set_trace()
+                    for a_y in y_pred:
+                        pre_list_pred
+                    # TODO
+                    (
+                        pre_lists_pred,
+                        pre_str_lists_pred,
+                    ) = self.predict_precursor_callback.predict_precursors(
+                        self.framework_model,
+                        target_compositions=np.expand_dims(
                                 test_targets_compositions[x_index], axis=0
-                            ),
-                            target_features=np.expand_dims(
+                        ),
+                        target_features=np.expand_dims(
                                 test_targets_features[x_index], axis=0
-                            ),
-                            precursors_conditional=np.expand_dims(
+                        ),
+                        precursors_conditional=np.expand_dims(
                                 precursors_conditional, axis=0
-                            ),
-                            to_print=False,
-                        )
-                        for ele in eles_x - eles_covered:
-                            if eles_x.issubset(eles_covered):
-                                # done
-                                break
-                            for (p_comp_prob, p_f_prob) in zip(
-                                pre_lists_pred[0], pre_str_lists_pred[0]
+                        ),
+                        to_print=False,
+                    )
+                    for ele in eles_x - eles_covered:
+                        if eles_x.issubset(eles_covered):
+                            # done
+                            break
+                        for (p_comp_prob, p_f_prob) in zip(
+                            pre_lists_pred[0], pre_str_lists_pred[0]
+                        ):
+                            p_comp = p_comp_prob["composition"]
+                            p_f = p_f_prob[0]
+                            p_eles = set(np.array(self.all_elements)[p_comp > 0])
+                            if p_f in pres_predict:
+                                continue
+                            if p_f in precursors_not_available:
+                                continue
+                            if ele in p_eles and p_eles.issubset(
+                                eles_x | common_eles
                             ):
-                                p_comp = p_comp_prob["composition"]
-                                p_f = p_f_prob[0]
-                                p_eles = set(np.array(self.all_elements)[p_comp > 0])
-                                if p_f in pres_predict:
-                                    continue
-                                if p_f in precursors_not_available:
-                                    continue
-                                if ele in p_eles and p_eles.issubset(
-                                    eles_x | common_eles
-                                ):
-                                    pres_predict.add(p_f)
-                                    eles_covered |= p_eles
-                                    break
-                    elif strategy == "naive_common":
-                        # add metal/metalloid sources first
-                        for ele in (eles_x - eles_covered) & all_extended_metal_eles:
-                            if ele in self.common_precursors:
-                                pres_predict.add(self.common_precursors[ele]["formula"])
-                                eles_covered |= set(
-                                    self.common_precursors[ele]["elements"]
-                                )
-                        # add nonvolatile nonmetal elements if necessary
-                        for ele in eles_x - eles_covered:
-                            if ele in self.common_precursors:
-                                pres_predict.add(self.common_precursors[ele]["formula"])
-                                eles_covered |= set(
-                                    self.common_precursors[ele]["elements"]
-                                )
+                                pres_predict.add(p_f)
+                                eles_covered |= p_eles
+                                break
 
                 if not eles_x.issubset(eles_covered):
                     continue
