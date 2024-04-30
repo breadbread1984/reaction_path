@@ -237,7 +237,7 @@ class PrecursorsRecommendation(object):
                     y_pred = y_pred.detach().cpu().numpy()
                     pre_lists_pred = list()
                     for a_y in y_pred:
-                        pre_list_pred = self.tar_labels[self.num_reserved_ids:][a_y > 0.5]
+                        pre_list_pred = np.array(self.tar_labels[self.num_reserved_ids:])[a_y > 0.5]
                         pre_score_pred = a_y[a_y > 0.5]
                     pre_lists_pred.append([{'composition': comp, 'score': score} for (comp, score) in zip(pre_list_pred, pre_score_pred)])
                     pre_lists_pred[-1] = sorted(all_pre_lists[-1], key = lambda x: x['score'], reverse = True)
