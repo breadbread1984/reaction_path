@@ -102,6 +102,29 @@ class PrecursorsRecommendation(object):
       precursors_not_available = precursors_not_available
     )
     return all_predicts
+  
+  def reformat_precursors(self, pres_candidates, ref_precursors_comp):
+        reformated_pres_candidates = []
+        for i in range(len(pres_candidates)):
+            pres = pres_candidates[i]
+            pres_info = {}
+            for p in pres:
+                if p in ref_precursors_comp:
+                    p_comp = ref_precursors_comp[p]
+                else:
+                    p_comp = formula_to_array(p, self.all_elements)
+                    ref_precursors_comp[p] = p_comp
+                # TODO: can i also make self.all_elements as ndarray?
+                p_eles = set(np.array(self.all_elements)[p_comp > 0])
+                pres_info[p] = {
+                    "formula": p,
+                    "composition": p_comp,
+                    "elements": p_eles,
+                }
+            reformated_pres_candidates.append(pres_info)
+
+        return reformated_pres_candidates, ref_precursors_comp
+
   def recommend_precursors_by_similarity(self, test_targets_formulas, all_distance, test_targets_compositions = None, test_targets_features = None, top_n = 1, validate_first_attempt = False, path_log = "dist_reaction.txt", common_eles = ("C", "H", "O", "N"), strategy = "conditional", precursors_not_available = None,):
         all_pres_predict = []
         all_rxns_predict = []
@@ -145,7 +168,7 @@ class PrecursorsRecommendation(object):
                     ]
                 )
             # reformat pres_candidates (formula -> eles)
-            pres_candidates, ref_precursors_comp = self._reformat_precursors(
+            pres_candidates, ref_precursors_comp = self.reformat_precursors(
                 pres_candidates=pres_candidates,
                 ref_precursors_comp=ref_precursors_comp,
             )
