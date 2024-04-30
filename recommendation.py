@@ -72,21 +72,36 @@ class PrecursorsRecommendation(object):
     comp = Composition(comp)
     formula = None if len(comp) == 0 else comp.get_integer_formula_and_factor(max_denominator = 1000000)[0]
     return formula
-  def call(self, target_formula, top_n = 1, strategy = 'conditional'):
+  def call(self, target_formula, top_n = 1, strategy = 'conditional', precursors_not_available = "default"):
     assert stretegy in {'conditional', 'naive'}
     if isinstance(target_formula, str):
       targets_formula = [target_formula]
     else:
       assert type(target_formula) is list
+    if precursors_not_available is None:
+      precursors_not_available = set()
+    elif precursors_not_available == "default":
+      precursors_not_available = self.pre_set_unavail_default
+    elif isinstance(precursors_not_available, str):
+      raise NotImplementedError
     targets_compositions = [self.formula_to_array(formula) for formula in targets_formula]
     targets_features = np.array([comp.copy() for comp in targets_compositions])
     targets_vecs = self.mat_encoder(torch.from_numpy(targets_features)).detach().cpu().numpy()
     targets_vecs = targets_vecs / np.linalg.norm(target_vecs, axis = -1, keepdims = True)
     all_distance = target_vecs @ self.train_targets_vecs.T
     all_distance_by_formula = {test_targets_formulas[i]: all_distance[i] for i in range(len(test_targets_formulas))}
-    all_preds_predict, all_predicts = self.
-    # TODO
-  def recommend_precursors_by_similarity(self, test_targets_formulas, train_targets_recipes, all_distance, test_targets_compositions = None, test_targets_features = None, top_n = 1, validate_first_attempt = False, path_log = "dist_reaction.txt", common_eles = ("C", "H", "O", "N"), strategy = "conditional", precursors_not_available = None,):
+    all_preds_predict, all_predicts = self.recommend_precursors_by_similarity(
+      test_targets_formulas = targets_formulas,
+      test_targets_compositions = targets_compositions,
+      test_targets_features = targets_features,
+      all_distance = all_distance,
+      top_n = top_n,
+      validate_first_attempt = validate_first_attempt,
+      strategy = strategy,
+      precursors_not_available = precursors_not_available
+    )
+    return all_predicts
+  def recommend_precursors_by_similarity(self, test_targets_formulas, all_distance, test_targets_compositions = None, test_targets_features = None, top_n = 1, validate_first_attempt = False, path_log = "dist_reaction.txt", common_eles = ("C", "H", "O", "N"), strategy = "conditional", precursors_not_available = None,):
         all_pres_predict = []
         all_rxns_predict = []
         ref_precursors_comp = {}
@@ -125,7 +140,7 @@ class PrecursorsRecommendation(object):
                 pres_candidates.extend(
                     [
                         item[0]
-                        for item in train_targets_recipes[y_index]["pres"].most_common()
+                        for item in self.train_targets_recipes[y_index]["pres"].most_common()
                     ]
                 )
             # reformat pres_candidates (formula -> eles)
