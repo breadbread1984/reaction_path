@@ -239,7 +239,7 @@ class PrecursorsRecommendation(object):
                     for a_y in y_pred:
                         pre_list_pred = np.array(self.tar_labels[self.num_reserved_ids:])[a_y > 0.5]
                         pre_score_pred = a_y[a_y > 0.5]
-                    pre_lists_pred.append([{'composition': comp, 'score': score} for (comp, score) in zip(pre_list_pred, pre_score_pred)])
+                    pre_lists_pred.append([{'composition': np.array(comp.decode('utf-8').split(' ')).astype(np.float32), 'score': score} for (comp, score) in zip(pre_list_pred, pre_score_pred)])
                     pre_lists_pred[-1] = sorted(pre_lists_pred[-1], key = lambda x: x['score'], reverse = True)
                     pre_str_lists_pred = list()
                     for i, tar_comp in enumerate(target_compositions):
@@ -250,11 +250,8 @@ class PrecursorsRecommendation(object):
                         if eles_x.issubset(eles_covered):
                             # done
                             break
-                        for (p_comp_prob, p_f_prob) in zip(
-                            pre_lists_pred[0], pre_str_lists_pred[0]
-                        ):
+                        for (p_comp_prob, p_f_prob) in zip(pre_lists_pred[0], pre_str_lists_pred[0]):
                             p_comp = p_comp_prob["composition"]
-                            p_comp = np.array(p_comp.decode('utf-8').split(' ')).astype(np.float32)
                             assert p_comp.shape[0] == len(self.all_elements)
                             p_f = p_f_prob[0]
                             p_eles = set(np.array(self.all_elements)[p_comp > 0])
