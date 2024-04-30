@@ -243,7 +243,7 @@ class PrecursorsRecommendation(object):
                     pre_lists_pred[-1] = sorted(pre_lists_pred[-1], key = lambda x: x['score'], reverse = True)
                     pre_str_lists_pred = list()
                     for i, tar_comp in enumerate(target_compositions):
-                        pre_str_list = [(self.array_to_formula(comp['composition'], self.all_elements), comp['score']) for comp in pre_lists_pred[i]]
+                        pre_str_list = [(self.array_to_formula(comp['composition']), comp['score']) for comp in pre_lists_pred[i]]
                         pre_str_lists_pred.append(pre_str_list)
                     # NOTE: here
                     for ele in eles_x - eles_covered:
