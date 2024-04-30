@@ -73,7 +73,7 @@ class PrecursorsRecommendation(object):
     comp = Composition(comp)
     formula = None if len(comp) == 0 else comp.get_integer_formula_and_factor(max_denominator = 1000000)[0]
     return formula
-  def call(self, target_formula, top_n = 1, strategy = 'conditional', precursors_not_available = "default"):
+  def call(self, targets_formula, top_n = 1, strategy = 'conditional', precursors_not_available = "default"):
     assert strategy in {'conditional', 'naive'}
     if isinstance(target_formula, str):
       targets_formula = [target_formula]
