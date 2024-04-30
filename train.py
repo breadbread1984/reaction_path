@@ -110,8 +110,8 @@ def main(unused_argv):
           'epoch': epoch,
           'tar_labels': tar_labels,
           'ele_counts': ele_counts,
-          'max_mats_num': max_mats_num,
-          'num_reserved_ids': num_reserved_ids}
+          'max_mats_num': FLAGS.max_mats_num,
+          'num_reserved_ids': FLAGS.num_reserved_ids}
         save(ckpt, join(FLAGS.ckpt, 'model.pth'))
     scheduler.step()
     pre_predict.eval()
