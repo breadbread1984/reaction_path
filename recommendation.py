@@ -92,12 +92,12 @@ class PrecursorsRecommendation(object):
     all_distance = targets_vecs @ self.train_targets_vecs.T
     all_distance_by_formula = {target_formula[i]: all_distance[i] for i in range(len(target_formula))}
     all_preds_predict, all_predicts = self.recommend_precursors_by_similarity(
-      test_targets_formulas = targets_formulas,
+      test_targets_formulas = target_formula,
       test_targets_compositions = targets_compositions,
       test_targets_features = targets_features,
       all_distance = all_distance,
       top_n = top_n,
-      validate_first_attempt = validate_first_attempt,
+      validate_first_attempt = True,
       strategy = strategy,
       precursors_not_available = precursors_not_available
     )
