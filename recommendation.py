@@ -101,30 +101,41 @@ class PrecursorsRecommendation(object):
       strategy = strategy,
       precursors_not_available = precursors_not_available
     )
-    return all_predicts
-  
+    return all_predicts 
   def reformat_precursors(self, pres_candidates, ref_precursors_comp):
-        reformated_pres_candidates = []
-        for i in range(len(pres_candidates)):
-            pres = pres_candidates[i]
-            pres_info = {}
-            for p in pres:
-                if p in ref_precursors_comp:
-                    p_comp = ref_precursors_comp[p]
-                else:
-                    p_comp = self.formula_to_array(p)
-                    ref_precursors_comp[p] = p_comp
-                # TODO: can i also make self.all_elements as ndarray?
-                p_eles = set(np.array(self.all_elements)[p_comp > 0])
-                pres_info[p] = {
-                    "formula": p,
-                    "composition": p_comp,
-                    "elements": p_eles,
-                }
-            reformated_pres_candidates.append(pres_info)
-
-        return reformated_pres_candidates, ref_precursors_comp
-
+    reformated_pres_candidates = []
+    for i in range(len(pres_candidates)):
+      pres = pres_candidates[i]
+      pres_info = {}
+      for p in pres:
+        if p in ref_precursors_comp:
+          p_comp = ref_precursors_comp[p]
+        else:
+          p_comp = self.formula_to_array(p)
+          ref_precursors_comp[p] = p_comp
+        # TODO: can i also make self.all_elements as ndarray?
+        p_eles = set(np.array(self.all_elements)[p_comp > 0])
+        pres_info[p] = {
+          "formula": p,
+          "composition": p_comp,
+          "elements": p_eles,
+        }
+      reformated_pres_candidates.append(pres_info)
+    return reformated_pres_candidates, ref_precursors_comp
+  def common_precursors_recommendation(self, eles_target, common_precursors, common_eles, validate_first_attempt = True, validate_reaction = True, target_formula = None, ref_materials_comp = None):
+    common_pres = []
+    for ele in eles_target:
+      if ele in common_precursors:
+        common_pres.append(common_precursors[ele])
+    pres_eles = set(sum([x["elements"] for x in common_pres], []))
+    pres_formulas = tuple(sorted(set([x["formula"] for x in common_pres])))
+    if validate_first_attempt:
+      if not (
+        pres_eles.issubset(eles_target | common_eles)
+        and eles_target.issubset(pres_eles | {"O","H",})
+      ):
+        pres_formulas = None
+    return pres_formulas
   def recommend_precursors_by_similarity(self, test_targets_formulas, all_distance, test_targets_compositions = None, test_targets_features = None, top_n = 1, validate_first_attempt = False, path_log = "dist_reaction.txt", common_eles = ("C", "H", "O", "N"), strategy = "conditional", precursors_not_available = None,):
         all_pres_predict = []
         all_rxns_predict = []
