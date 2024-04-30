@@ -40,9 +40,7 @@ class PrecursorsRecommendation(object):
     # load first formula string of each element
     self.common_precursors_set = set([formulas[0]["formula"] for ele, formulas in self.precursor_frequencies.items()])
     # 6) load data
-    data = np.load(join(), allow_pickle = True)
-    self.train_reactions = list(data['train_reactions']) + list(data['val_reactions']) + list(data['test_reactions'])
-    self.train_targets, self.train_targets_formulas, self.train_targets_features = self.collect_targets_in_reactions()
+    self.train_targets, self.train_targets_formulas, self.train_targets_features = self.collect_targets_in_reactions(data_dir)
     self.train_targets_recipes = [self.train_targets[x] for x in self.train_targets_formulas]
     self.train_targets_vecs = self.mat_encoder(torch.from_numpy(self.train_targets_features)).detach().cpu().numpy()
     self.train_targets_vecs = self.train_targets_vecs / np.linalg.norm(self.train_targets_vecs, axis = -1, keedims = True)
@@ -88,10 +86,12 @@ class PrecursorsRecommendation(object):
     all_distance_by_formula = {test_targets_formulas[i]: all_distance[i] for i in range(len(test_targets_formulas))}
     all_preds_predict, all_predicts = self.
     # TODO
-  def collect_targets_in_reactions(self,):
+  def collect_targets_in_reactions(self, data_dir):
+    data = np.load(join(data_dir, 'data_split.npz'), allow_pickle = True)
+    train_reactions = list(data['train_reactions']) + list(data['val_reactions']) + list(data['test_reactions'])
     raw_indices_train = set()
     train_targets = dict()
-    for r in self.train_reactions:
+    for r in train_reactions:
       tar_f = self.array_to_formula(r['target_comp'][0], self.all_elements)
       if len(r['target_comp']) > 1:
         print("len(r['target_comp'])", len(r['target_comp']))
