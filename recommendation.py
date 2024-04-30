@@ -4,6 +4,7 @@ from os.path import join, exists
 import json
 import collections
 from pymatgen.core import Composition
+import numpy as np
 import torch
 from torch import load
 from models import PrecursorPredictor
@@ -12,7 +13,7 @@ class PrecursorsRecommendation(object):
   def __init__(self, model_dir = 'ckpt', data_dir = 'rsc', device = 'cpu'):
     assert device in {'cpu', 'cuda'}
     # 1) load model
-    ckpt = load(join(model_dir, 'model.pth'))
+    ckpt = load(join(model_dir, 'model.pth'), map_location = torch.device(device))
     tar_labels = ckpt['tar_labels']
     max_mats_num = ckpt['max_mats_num']
     self.pre_predict = PrecursorPredictor(vocab_size = len(tar_labels), max_mats_num = max_mats_num).to(torch.device(device))
