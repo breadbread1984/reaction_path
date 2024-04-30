@@ -128,7 +128,7 @@ class PrecursorsRecommendation(object):
                 }
             )
 
-            eles_x = set(get_elements_in_formula(x))
+            eles_x = set([str(ele) for ele in Composition(x).elements])
             pres_candidates = []
             zero_composition = np.zeros(
                 shape=(len(self.all_elements),),
