@@ -90,7 +90,7 @@ class PrecursorsRecommendation(object):
     targets_vecs = self.mat_encoder(torch.from_numpy(targets_features))[0].detach().cpu().numpy()
     targets_vecs = targets_vecs / np.linalg.norm(targets_vecs, axis = -1, keepdims = True)
     all_distance = targets_vecs @ self.train_targets_vecs.T
-    all_distance_by_formula = {targets_formulas[i]: all_distance[i] for i in range(len(target_formula))}
+    all_distance_by_formula = {target_formula[i]: all_distance[i] for i in range(len(target_formula))}
     all_preds_predict, all_predicts = self.recommend_precursors_by_similarity(
       test_targets_formulas = targets_formulas,
       test_targets_compositions = targets_compositions,
