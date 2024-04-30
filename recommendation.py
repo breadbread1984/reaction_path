@@ -56,6 +56,7 @@ class PrecursorsRecommendation(object):
       pres_unavail = json.load(f)
     self.pre_set_unavail_default = set(pres_unavail)
   def formula_to_array(self, formula):
+    # NOTE: convert a formula to a vector of floats representing atom number proportion among all atoms of a material
     comp = Composition(formula).as_dict()
     comp_array = np.zeros((len(self.all_elements),), dtype = np.float32)
     for c, v in composition.items():
@@ -64,6 +65,7 @@ class PrecursorsRecommendation(object):
     comp_array /= max(np.sum(comp_array), 1e-6)
     return comp_array
   def array_to_formula(self, comp_array):
+    # NOTE: convert a vector of floats representing atom number proportion among all atoms of a material to a formula
     composition = dict(filter(lambd x: x[1] > 0, zip(self.all_elements, comp_array)))
     comp = {k: float(v) for k, v in composition.items()}
     comp = Composition(comp)
@@ -80,6 +82,8 @@ class PrecursorsRecommendation(object):
     targets_vecs = self.mat_encoder(torch.from_numpy(targets_features)).detach().cpu().numpy()
     targets_vecs = targets_vecs / np.linalg.norm(target_vecs, axis = -1, keepdims = True)
     all_distance = target_vecs @ self.train_targets_vecs.T
+    all_distance_by_formula = {test_targets_formulas[i]: all_distance[i] for i in range(len(test_targets_formulas))}
+    all_preds_predict, all_predicts = self.
     # TODO
   def collect_targets_in_reactions(self,):
     raw_indices_train = set()
