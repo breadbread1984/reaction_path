@@ -334,16 +334,3 @@ class PrecursorsRecommendation(object):
     print("len(train_targets)", len(train_targets))
     return train_targets, train_targets_formulas, train_targets_features
 
-if __name__ == "__main__":
-  recommend = PrecursorsRecommendation()
-  target_formula = [
-    "SrZnSO",
-    "Na3TiV(PO4)3",
-    "GdLu(MoO4)3",
-    "BaYSi2O5N",
-    "Cu3Yb(SeO3)2O2Cl",
-  ]
-  all_predicts = recommend.call(target_formula = target_formula, top_n = 10)
-  from pprint import pprint
-  for target, precursors in zip(target_formula, all_predicts):
-    print(precursors)
