@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from recommendation import PrecursorsRecommendation
+from reaction_path import PrecursorsRecommendation
 
 def main():
   recommend = PrecursorsRecommendation()

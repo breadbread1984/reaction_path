@@ -7,8 +7,8 @@ from pymatgen.core import Composition
 import numpy as np
 import torch
 from torch import load
-from models import PrecursorPredictor
-from utils import get_composition_string
+from .models import PrecursorPredictor
+from .utils import get_composition_string
 
 class PrecursorsRecommendation(object):
   def __init__(self, model_dir = 'ckpt', data_dir = 'rsc', device = 'cpu'):
