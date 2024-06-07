@@ -6,6 +6,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
+# encoder encoding compound's element weight vector (83) to feature vector (32)
 class MaterialEncoder(nn.Module):
   def __init__(self, mat_feature_len = 83, ele_dim_features = 32, num_attention_layers = 3, hidden_activation = 'gelu'):
     super(MaterialEncoder, self).__init__()
@@ -36,6 +37,7 @@ class MaterialEncoder(nn.Module):
     x = torch.zeros((inputs.shape[0], self.ele_dim_features)).to(x.device).scatter_(dim = 0, index = index, src = x) # x.shape = (batch, ele_dim_features)
     return x, mask
 
+# decoder decoding feature vector (32) to compound's element weight vector (83)
 class MaterialDecoder(nn.Module):
   def __init__(self, mat_feature_len = 83, ele_dim_features = 32, final_activation = None, norm_in_element_projection = False):
     super(MaterialDecoder, self).__init__()
@@ -67,6 +69,7 @@ class MaterialDecoder(nn.Module):
     x = torch.sigmoid(x) # x.shape = (batch, mat_feature_len)
     return x, mask
 
+# create bert layer with transformers
 def TransformerLayer(max_mats_num, 
                      hidden_size = 768,
                      num_attention_heads = 12,
@@ -84,11 +87,16 @@ def TransformerLayer(max_mats_num,
   )
   return BertLayer(config)
 
+# compound's element weight vector -> feature vector
+# material index vector (like token sequence) representing given precursors -> a sequence of feature vector
+# concat compound's feature vector and precursors' vector sequence -> a sequence of feature vector
+# feed feature vector to transformer encoder to get a sequence of embedding vector, only use the first embedding vector for classification
+# predict a multi hot vector with embedding vector. the set locations represent corresponding materials as precursors
 class PrecursorPredictor(nn.Module):
   def __init__(self, vocab_size, max_mats_num = 6, attention_num_heads = 2, hidden_dropout = 0.1, attention_dropout = 0.1, num_reserved_ids = 10, mat_feature_len = 83, ele_dim_features = 32, num_attention_layers = 3, hidden_activation = 'gelu'):
     super(PrecursorPredictor, self).__init__()
     self.mat_encoder = MaterialEncoder(mat_feature_len, ele_dim_features, num_attention_layers, hidden_activation)
-    self.precursor_layer = nn.Linear(ele_dim_features, vocab_size - num_reserved_ids)
+    self.precursor_layer = nn.Linear(ele_dim_features, vocab_size - num_reserved_ids) # embedding and predict head share weights
     self.incomplete_reaction_atten_layer = TransformerLayer(max_mats_num = max_mats_num, hidden_size = ele_dim_features, num_attention_heads = attention_num_heads, intermediate_size = ele_dim_features, intermediate_activation = hidden_activation, hidden_dropout_prob = hidden_dropout, attention_probs_dropout_prob = attention_dropout)
   def forward(self, targets, precursors_conditional_indices = None):
     # targets.shape = (batch, mat_feature_len), dtype = float32
