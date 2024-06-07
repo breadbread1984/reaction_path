@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 from collections import namedtuple
-from transformers.models.bert import BertLayer
+from transformers.models.bert import BertLayer, BertConfig
 import torch
 from torch import nn
 import torch.nn.functional as F
@@ -74,20 +74,14 @@ def TransformerLayer(max_mats_num,
                      intermediate_activation = 'gelu',
                      hidden_dropout_prob = 0.0,
                      attention_probs_dropout_prob = 0.0):
-  config = {'chunk_size_feed_forward': 0,
-            'is_decoder': False,
-            'add_cross_attention': False,
-            'num_attention_heads': num_attention_heads,
-            'hidden_size': hidden_size,
-            'intermediate_size': intermediate_size,
-            'attention_probs_dropout_prob': attention_probs_dropout_prob,
-            'position_embedding_type': 'absolute',
-            'max_position_embeddings': max_mats_num,
-            'layer_norm_eps': 1e-12,
-            'hidden_dropout_prob': hidden_dropout_prob,
-            'hidden_act': intermediate_activation}
-  Config = namedtuple('config', config.keys())
-  config = Config(**config)
+  config = BertConfig(
+    hidden_size = hidden_size,
+    num_attention_heads = num_attention_heads,
+    intermediate_size = intermediate_size,
+    hidden_dropout_prob = hidden_dropout_prob,
+    attention_probs_dropout_prob = attention_probs_dropout_prob,
+    max_position_embeddings = max_mats_num,
+  )
   return BertLayer(config)
 
 class PrecursorPredictor(nn.Module):
