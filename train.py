@@ -11,8 +11,8 @@ from torch.utils.tensorboard import SummaryWriter
 from torch.optim import Adam
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from reaction_path import MaterialDecoder, PrecursorPredictor
-from reaction_path import MaterialDataset
 from reaction_path import get_ele_counts, get_composition_string, generate_labels
+from datasets import MaterialDataset
 
 FLAGS = flags.FLAGS
 
