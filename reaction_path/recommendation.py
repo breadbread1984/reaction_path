@@ -87,12 +87,15 @@ class PrecursorsRecommendation(object):
       precursors_not_available = self.pre_set_unavail_default
     elif isinstance(precursors_not_available, str):
       raise NotImplementedError
+    # 1) convert formula of targets to feature vectors with material encoder
     targets_compositions = [self.formula_to_array(formula) for formula in target_formula]
     targets_features = np.array([comp.copy() for comp in targets_compositions])
     targets_vecs = self.mat_encoder(torch.from_numpy(targets_features))[0].detach().cpu().numpy()
+    # 2) calculate distances between feature vectors of target material and precursor feature vectors
     targets_vecs = targets_vecs / np.linalg.norm(targets_vecs, axis = -1, keepdims = True)
-    all_distance = targets_vecs @ self.train_targets_vecs.T
+    all_distance = targets_vecs @ self.train_targets_vecs.T # all_distance.shape = (target_num, precursor_num)
     all_distance_by_formula = {target_formula[i]: all_distance[i] for i in range(len(target_formula))}
+    # 3) predict all precursors with the precursors with closest distances
     all_preds_predict, all_predicts = self.recommend_precursors_by_similarity(
       test_targets_formulas = target_formula,
       test_targets_compositions = targets_compositions,
