@@ -1,15 +1,8 @@
 #!/usr/bin/python3
 
 from setuptools import setup
-from setuptools.command.install import install
-from gdown import download
 
-class PostInstallCommand(install):
-  def run(self):
-    install.run(self)
-    download(id = '1ack7mcyHtUVMe99kRARvdDV8UhweElJ4', output = '')
-
-s = setup(
+setup(
   name = "reaction_path",
   version = "1.0",
   author = "xieyi",
@@ -19,8 +12,6 @@ s = setup(
   url = "https://github.com/breadbread1984/reaction_path/tree/main",
   packages = ["reaction_path"],
   install_requires = ["numpy","torch","transformers","pymatgen","gdown"],
-  cmdclass = {'install': PostInstallCommand},
   license = "Apache License 2.0"
 )
 
-s.command_obj['install'].__dir__()
