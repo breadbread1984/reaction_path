@@ -21,7 +21,7 @@ class PrecursorsRecommendation(object):
     download(id = '1dDiCcWNEbsnPyKrZYXsYiOsWiLAsmii3', output = join(expanduser('~'), '.react_path', 'ckpt.zip'))
     with ZipFile(join(expanduser('~'), '.react_path', 'ckpt.zip'), 'r') as f:
       f.extractall(join(expanduser('~'), '.react_path'))
-    model_dir = join(expanduser('~'), '.react_path', 'ckpt')
+    model_dir = join(expanduser('~'), '.react_path', 'reaction_path_ckpt')
     data_dir = join(expanduser('~'), '.react_path', 'rsc')
     # 1) load model
     ckpt = load(join(model_dir, 'model.pth'), map_location = torch.device(device))
