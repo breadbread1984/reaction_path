@@ -19,12 +19,12 @@ class PrecursorsRecommendation(object):
     if not exists(join(expanduser('~'), '.react_path')): mkdir(join(expanduser('~'), '.react_path'))
     if not exists(join(expanduser('~'), '.react_path', 'rsc')):
       download(id = '1ack7mcyHtUVMe99kRARvdDV8UhweElJ4', output = join(expanduser('~'), '.react_path', 'rsc.zip'))
+      with ZipFile(join(expanduser('~'), '.react_path', 'rsc.zip'), 'r') as f:
+        f.extractall(join(expanduser('~'), '.react_path'))
     if not exists(join(expanduser('~'), '.react_path', 'react_path_ckpt')):
       download(id = '1dDiCcWNEbsnPyKrZYXsYiOsWiLAsmii3', output = join(expanduser('~'), '.react_path', 'ckpt.zip'))
-    with ZipFile(join(expanduser('~'), '.react_path', 'rsc.zip'), 'r') as f:
-      f.extractall(join(expanduser('~'), '.react_path'))
-    with ZipFile(join(expanduser('~'), '.react_path', 'ckpt.zip'), 'r') as f:
-      f.extractall(join(expanduser('~'), '.react_path'))
+      with ZipFile(join(expanduser('~'), '.react_path', 'ckpt.zip'), 'r') as f:
+        f.extractall(join(expanduser('~'), '.react_path'))
     remove(join(expanduser('~'), '.react_path', 'rsc.zip'))
     remove(join(expanduser('~'), '.react_path', 'ckpt.zip'))
     model_dir = join(expanduser('~'), '.react_path', 'reaction_path_ckpt')
