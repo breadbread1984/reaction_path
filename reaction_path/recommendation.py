@@ -22,7 +22,7 @@ class PrecursorsRecommendation(object):
       with ZipFile(join(expanduser('~'), '.react_path', 'rsc.zip'), 'r') as f:
         f.extractall(join(expanduser('~'), '.react_path'))
       remove(join(expanduser('~'), '.react_path', 'rsc.zip'))
-    if not exists(join(expanduser('~'), '.react_path', 'react_path_ckpt')):
+    if not exists(join(expanduser('~'), '.react_path', 'reaction_path_ckpt')):
       download(id = '1dDiCcWNEbsnPyKrZYXsYiOsWiLAsmii3', output = join(expanduser('~'), '.react_path', 'ckpt.zip'))
       with ZipFile(join(expanduser('~'), '.react_path', 'ckpt.zip'), 'r') as f:
         f.extractall(join(expanduser('~'), '.react_path'))
