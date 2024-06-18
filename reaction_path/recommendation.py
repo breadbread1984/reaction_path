@@ -1,9 +1,12 @@
 #!/usr/bin/python3
 
-from os.path import join, exists
+from os import mkdir
+from os.path import join, exists, expanduser
 import json
 import collections
 from pymatgen.core import Composition
+from gdown import download
+from zipfile import ZipFile
 import numpy as np
 import torch
 from torch import load
@@ -11,8 +14,15 @@ from .models import PrecursorPredictor
 from .utils import get_composition_string
 
 class PrecursorsRecommendation(object):
-  def __init__(self, model_dir = 'ckpt', data_dir = 'rsc', device = 'cpu'):
+  def __init__(self, device = 'cpu'):
     assert device in {'cpu', 'cuda'}
+    if not exists(join(expanduser('~'), '.react_path')): mkdir(join(expanduser('~'), '.react_path'))
+    download(id = '1ack7mcyHtUVMe99kRARvdDV8UhweElJ4', output = join(expanduser('~'), '.react_path', 'rsc'))
+    download(id = '1dDiCcWNEbsnPyKrZYXsYiOsWiLAsmii3', output = join(expanduser('~'), '.react_path', 'ckpt.zip'))
+    with ZipFile(join(expanduser('~'), '.react_path', 'ckpt.zip'), 'r') as f:
+      f.extractall(join(expanduser('~'), '.react_path'))
+    model_dir = join(expanduser('~'), '.react_path', 'ckpt')
+    data_dir = join(expanduser('~'), '.react_path', 'rsc')
     # 1) load model
     ckpt = load(join(model_dir, 'model.pth'), map_location = torch.device(device))
     self.tar_labels = ckpt['tar_labels']
