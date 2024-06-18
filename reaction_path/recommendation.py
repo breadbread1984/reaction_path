@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
-from os import mkdir
-from os.path import join, exists, expanduser, remove
+from os import mkdir, remove
+from os.path import join, exists, expanduser
 import json
 import collections
 from pymatgen.core import Composition
