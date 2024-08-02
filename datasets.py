@@ -38,7 +38,7 @@ class MaterialDataset(Dataset):
       ):
         temperature_dict_list.extend(op["conditions"]["heating_temperature"])
     if temperature_dict_list:
-      firing_T = get_max_temperature(temperature_dict_list)
+      firing_T = self.get_max_temperature(temperature_dict_list)
     else:
       firing_T = 1000
     return firing_T
