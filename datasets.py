@@ -20,6 +20,14 @@ class MaterialDataset(Dataset):
     if len(samples) == 0:
       samples.append(np.zeros(shape = sample_shape, dtype = np.float32))
     return samples
+  def get_max_temperature(self, temperature_dict_list):
+    # goal
+    max_T = 1000
+
+    assert len(temperature_dict_list) > 0
+    all_Ts = [tmp_T["max_value"] for tmp_T in temperature_dict_list]
+    max_T = max(all_Ts)
+    return max_T
   def get_max_firing_T(self, reaction):
     temperature_dict_list = []
     for op in reaction["operations"]:
